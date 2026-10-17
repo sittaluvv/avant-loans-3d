@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { motion, useReducedMotion } from "motion/react"
-import { APPLY_URL } from "./Header"
+import { pickerLinkProps } from "./LoanTypePicker"
 import { HERO_MEDIA, PHONE_QUERY } from "./heroMedia"
 
 const { desktop, phone } = HERO_MEDIA
@@ -100,11 +100,12 @@ export function HeroVideo() {
             transition={{ duration: 0.55, delay: 0.08 }}
             className="mt-5 max-w-md text-lg leading-relaxed text-white/85"
           >
-            Simple, fast, and transparent. Check your options in minutes — then manage everything from your phone.
+            Simple, transparent personal loans for the Gulf. Apply online and our team will contact you by WhatsApp or email.
           </motion.p>
           <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
             <a
-              href={APPLY_URL}
+              {...pickerLinkProps}
+              data-testid="hero-apply"
               className="inline-flex items-center justify-center rounded-full bg-[#3B2BBF] px-8 py-3.5 text-base font-semibold text-white shadow-[0_16px_40px_-12px_rgba(59,43,191,.95)] ring-1 ring-white/20 transition-transform hover:scale-[1.02] hover:bg-[#4a3bd6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               Apply for Loan
@@ -113,7 +114,6 @@ export function HeroVideo() {
               Browse loan types
             </a>
           </div>
-          <p className="mt-3 text-sm text-white/70">Checking options won’t affect your credit score.</p>
         </div>
       </div>
       {/* curved transition into the light sections */}

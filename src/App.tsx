@@ -3,6 +3,8 @@ import { LightHeader } from "./components/LightHeader"
 import { HeroVideo } from "./components/HeroVideo"
 import { APPLY_URL } from "./components/Header"
 import { WhyUs } from "./components/WhyUs"
+import { LoanTypePicker, pickerLinkProps } from "./components/LoanTypePicker"
+import { applyUrlFor, loanTypeById } from "./lib/loanTypes"
 import { SiteFooter } from "./components/SiteFooter"
 import { formatMoney, formatNumber, loanRange, useCurrency } from "./lib/currency"
 import houseImg from "./assets/3d/fluent-house.webp"
@@ -10,10 +12,6 @@ import carImg from "./assets/3d/fluent-car.webp"
 import moneyBag from "./assets/3d/fluent-money-bag.webp"
 import briefcase from "./assets/3d/fluent-briefcase.webp"
 import gradCap from "./assets/3d/fluent-grad-cap.webp"
-import moneyWings from "./assets/3d/fluent-money-wings.webp"
-import chartUp from "./assets/3d/fluent-chart-up.webp"
-import shield from "./assets/3d/fluent-shield.webp"
-import bank from "./assets/3d/fluent-bank.webp"
 
 const loanTypes = [
   { title: "Mortgage", key: "Mortgage", desc: "Buy or refinance a home", img: houseImg, alt: "3D house icon" },
@@ -23,17 +21,10 @@ const loanTypes = [
   { title: "Education", key: "Education", desc: "School and training", img: gradCap, alt: "3D graduation cap icon" },
 ]
 
-const benefits = [
-  { title: "Fast approval", desc: "Decisions in minutes, not days.", img: moneyWings, alt: "3D money with wings icon" },
-  { title: "Low rates", desc: "Competitive APR options you can compare.", img: chartUp, alt: "3D chart trending up icon" },
-  { title: "Secure", desc: "Bank-grade privacy practices on every step.", img: shield, alt: "3D shield icon" },
-  { title: "Trusted", desc: "Clear terms with no surprise fees.", img: bank, alt: "3D bank icon" },
-]
-
 const steps = [
   { n: "01", t: "Choose a loan", d: "Pick mortgage, auto, personal, business or education." },
-  { n: "02", t: "Tell us about you", d: "A short form — checking options won’t hit your credit score." },
-  { n: "03", t: "Get a decision", d: "Our team reviews your request and contacts you to discuss next steps." },
+  { n: "02", t: "Tell us about you", d: "Complete a short online form and choose WhatsApp or email for contact." },
+  { n: "03", t: "We contact you", d: "Our team reviews every enquiry and contacts you by WhatsApp or email." },
 ]
 
 /** "SAR 4,000 – 281,000" for a loan type, in the visitor's currency. */
@@ -55,6 +46,7 @@ export default function App() {
         Skip to application
       </a>
       <LightHeader overlay />
+      <LoanTypePicker />
 
       <main>
         {/* HERO: original boardroom handshake video */}
@@ -79,7 +71,8 @@ export default function App() {
                   transition={{ delay: i * 0.06, duration: 0.45 }}
                 >
                   <a
-                    href={APPLY_URL}
+                    href={applyUrlFor(APPLY_URL, loanTypeById(l.key)?.slug ?? "personal")}
+                    data-testid={`card-${loanTypeById(l.key)?.slug}`}
                     className="glass-light group flex h-full flex-col items-center rounded-3xl p-5 text-center transition-transform hover:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]"
                   >
                     <img src={l.img} alt={l.alt} width={256} height={256} className="h-20 w-20 object-contain drop-shadow-md transition-transform group-hover:scale-110 sm:h-24 sm:w-24" loading="lazy" />
@@ -88,31 +81,6 @@ export default function App() {
                     <AmountRange type={l.key} />
                     <span className="mt-auto pt-4 text-sm font-semibold text-[#3B2BBF]">Apply →</span>
                   </a>
-                </motion.li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        {/* BENEFITS */}
-        <section id="benefits" className="scroll-mt-24 bg-white/60 px-5 py-16 sm:px-8 sm:py-20">
-          <div className="mx-auto max-w-6xl">
-            <h2 className="text-center font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              Built to feel effortless
-            </h2>
-            <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {benefits.map((b, i) => (
-                <motion.li
-                  key={b.title}
-                  initial={reduced ? false : { opacity: 0, y: 18 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.06, duration: 0.45 }}
-                  className="rounded-3xl border border-[#3B2BBF]/10 bg-white p-6 shadow-[0_20px_50px_-36px_rgba(59,43,191,.45)]"
-                >
-                  <img src={b.img} alt={b.alt} width={256} height={256} className="h-16 w-16 object-contain" loading="lazy" />
-                  <h3 className="mt-4 font-display text-lg font-bold text-slate-900">{b.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{b.desc}</p>
                 </motion.li>
               ))}
             </ul>
@@ -142,9 +110,10 @@ export default function App() {
         <section aria-label="Apply" className="px-5 pb-20 sm:px-8">
           <div className="mx-auto max-w-4xl rounded-[28px] bg-gradient-to-br from-[#4B3BDF] to-[#2A1D9E] px-6 py-10 text-center text-white shadow-[0_30px_60px_-30px_rgba(59,43,191,.8)] sm:px-12">
             <h2 className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Ready to move forward?</h2>
-            <p className="mx-auto mt-2 max-w-lg text-white/80">The short application takes about three minutes.</p>
+            <p className="mx-auto mt-2 max-w-lg text-white/80">Apply online in a few short steps.</p>
             <a
-              href={APPLY_URL}
+              {...pickerLinkProps}
+              data-testid="cta-apply"
               className="mt-6 inline-flex rounded-full bg-white px-8 py-3.5 text-base font-semibold text-[#3B2BBF] hover:bg-[#F3F0FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               Apply for Loan

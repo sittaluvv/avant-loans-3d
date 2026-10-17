@@ -9,6 +9,7 @@ import briefcaseImg from "../assets/3d/fluent-briefcase.webp"
 import gradCapImg from "../assets/3d/fluent-grad-cap.webp"
 import { submitApplication, isLive } from "../lib/submit"
 import { SUBMIT_NOTICE } from "../lib/legal"
+import { loanTypeById, loanTypeBySlug } from "../lib/loanTypes"
 import { IdUploads, IdPrivacyNote, ID_TYPES, checkIdFile, type IdFiles, type IdSide } from "./IdUpload"
 
 /*
@@ -192,6 +193,22 @@ export function MortgageForm() {
     }))
   }
 
+  // ?type=<slug> from the homepage: preselect and collapse the loan-type selector to a chip ("Personal Loan · Change").
+  const [typeLocked, setTypeLocked] = useState(false)
+  const [loanTypeError, setLoanTypeError] = useState("")
+  const cameWithType = useRef(false)
+  useEffect(() => {
+    const t = loanTypeBySlug(new URLSearchParams(window.location.search).get("type"))
+    if (t) { cameWithType.current = true; pickLoanType(t.id); setTypeLocked(true) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const chooseLoanType = (id: string) => {
+    pickLoanType(id); setLoanTypeError("")
+    const slug = loanTypeById(id)?.slug
+    if (slug) { const u = new URL(window.location.href); u.searchParams.set("type", slug); window.history.replaceState(null, "", u) }
+    if (cameWithType.current) setTypeLocked(true)
+  }
+
   // Currency switched: convert the entered amount via USD, snap to the new step, clamp to the new limits.
   const prevCurrency = useRef(currency)
   useEffect(() => {
@@ -204,7 +221,9 @@ export function MortgageForm() {
       const r = loanRange(prev["loan-type"], currency)
       const usd = toUsd(n, from)
       const conv = usd * currencyInfo(currency).perUsd
-      const target = Math.min(r.max, Math.max(r.min, Math.round(conv / r.step) * r.step))
+      const target = n === loanRange(prev["loan-type"], from).default
+        ? r.default // untouched default -> the new currency's clean default
+        : Math.min(r.max, Math.max(r.min, Math.round(conv / r.step) * r.step))
       return { ...prev, "loan-amount": String(target) }
     })
   }, [currency])
@@ -221,6 +240,7 @@ export function MortgageForm() {
     const els = [...f.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select")]
     els.forEach((el) => el.removeAttribute("aria-invalid"))
     const bad = els.filter((el) => !el.checkValidity())
+    if (step === 0) setLoanTypeError(data["loan-type"] ? "" : "Choose a loan type to continue.")
     // amount range check
     if (data["loan-type"] && (amountNum < range.min || amountNum > range.max)) {
       const el = f.querySelector<HTMLInputElement>("#loan-amount")
@@ -345,7 +365,7 @@ export function MortgageForm() {
       }} className="glass-light rounded-[28px] p-5 sm:p-10">
         <h1 className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-extrabold leading-tight tracking-tight text-slate-900">Online Loan Application Form</h1>
         <p className="mt-3 max-w-2xl leading-relaxed text-slate-600">
-          Please fill in our application form. All fields marked <span className="text-[#3B2BBF]">*</span> are required to prepare a complete and accurate loan offer.
+          Please fill in our application form. All fields marked <span className="text-[#3B2BBF]">*</span> are required so our team can review your enquiry.
         </p>
         <div className="mt-6 h-px bg-gradient-to-r from-[#3B2BBF]/30 via-slate-200 to-transparent" />
 
@@ -357,16 +377,25 @@ export function MortgageForm() {
             <legend className="sr-only">{stepLabels[step]}</legend>
 
             {step === 0 && (<>
-              <Row label="Loan Type" groupId="g-loan-type" hint="Choose the product you want">
-                <div role="radiogroup" aria-labelledby="g-loan-type" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              <Row label="Loan Type" groupId="g-loan-type" hint={loanType ? "Choose the product you want" : "Choose a loan type to continue"}>
+                {typeLocked && loanType ? (
+                  <div data-testid="loan-type-chip" className="inline-flex w-fit items-center gap-2.5 rounded-full border border-[#3B2BBF]/25 bg-[#3B2BBF]/[.06] py-1.5 pr-1.5 pl-2 text-sm">
+                    <img src={LOAN_TYPES.find((t) => t.id === loanType)?.img} alt="" width={256} height={256} className="h-7 w-7 object-contain" />
+                    <span className="font-semibold text-[#3B2BBF]">{loanTypeById(loanType)?.label ?? loanType}</span>
+                    <span aria-hidden className="text-slate-400">·</span>
+                    <button type="button" data-testid="loan-type-change" onClick={() => setTypeLocked(false)} aria-label={`Change loan type (currently ${loanTypeById(loanType)?.label ?? loanType})`}
+                      className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-[#3B2BBF] shadow-sm ring-1 ring-[#3B2BBF]/20 hover:bg-[#F3F0FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">Change</button>
+                  </div>
+                ) : (<>
+                <div role="radiogroup" aria-describedby={loanTypeError ? "loan-type-error" : undefined} aria-labelledby="g-loan-type" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                   {LOAN_TYPES.map((t, i) => {
                     const on = loanType === t.id
                     const id = `loan-type-${i}`
                     return (
                       <label key={t.id} htmlFor={id}
-                        className={`relative flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border p-4 text-center transition-all has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#3B2BBF] ${on ? "border-[#3B2BBF] bg-[#3B2BBF]/[.07] ring-2 ring-[#3B2BBF]/25 shadow-[0_16px_36px_-18px_rgba(59,43,191,.8)]" : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#3B2BBF]/40"}`}>
+                        className={`relative flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border p-4 text-center transition-all has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#3B2BBF] ${on ? "border-[#3B2BBF] bg-[#3B2BBF]/[.07] ring-2 ring-[#3B2BBF]/25 shadow-[0_16px_36px_-18px_rgba(59,43,191,.8)]" : loanTypeError ? "border-rose-300 bg-rose-50/40" : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#3B2BBF]/40"}`}>
                         <input id={id} type="radio" name="loan-type" value={t.id} checked={on} required={i === 0}
-                          onChange={() => pickLoanType(t.id)} className="sr-only" />
+                          onChange={() => chooseLoanType(t.id)} className="sr-only" />
                         <img src={t.img} alt="" width={256} height={256} className="h-14 w-14 object-contain drop-shadow-md sm:h-16 sm:w-16" />
                         <span className={`font-display text-sm font-semibold ${on ? "text-[#3B2BBF]" : "text-slate-800"}`}>{t.id}</span>
                         <span className="text-xs leading-snug text-slate-500">{t.hint}</span>
@@ -375,6 +404,8 @@ export function MortgageForm() {
                     )
                   })}
                 </div>
+                {loanTypeError && <p id="loan-type-error" role="alert" className="text-sm font-medium text-rose-700">{loanTypeError}</p>}
+                </>)}
               </Row>
 
               <Row label="Loan Amount" htmlFor="loan-amount" hint={loanType ? `${currency} · ${formatNumber(range.min)} – ${formatNumber(range.max)}` : "Select a loan type first"}>
@@ -451,8 +482,8 @@ export function MortgageForm() {
                       <Row label="Employer" groupId="g-employer" hint="Where you work now">
                         <Field id="employer" label="Employer name" autoComplete="organization" data={data} set={set} />
                         <div className="grid gap-3 sm:grid-cols-2">
-                          <Field id="job-title" label="Job title" autoComplete="organization-title" data={data} set={set} />
-                          <Field id="years-employed" label="Years with employer" type="number" min={0} max={60} step="0.5" inputMode="decimal" data={data} set={set} />
+                          <Field id="job-title" label="Job title" autoComplete="organization-title" optional data={data} set={set} />
+                          <Field id="years-employed" label="Years with employer" type="number" min={0} max={60} step="0.5" inputMode="decimal" optional data={data} set={set} />
                         </div>
                       </Row>
                     ) : (
