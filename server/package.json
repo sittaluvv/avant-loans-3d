@@ -1,0 +1,15 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "The GitHub Pages site is static. This Cloudflare Worker is the only place that holds the bot token. The browser posts JSON to the Worker; the Worker calls Telegram `sendMessage`.",
+  "main": "telegram-worker.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "wrangler": "^3.114.17"
+  }
+}

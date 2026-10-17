@@ -1,31 +1,59 @@
-import { useRef, useState, type ReactNode } from "react"
+import { useMemo, useRef, useState, type ReactNode } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
-import { Check, ChevronDown, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react"
+import {
+  Check, ChevronDown, ShieldCheck, ArrowLeft, Loader2,
+  Home, UserRound, Car, Briefcase, GraduationCap,
+} from "lucide-react"
 import { submitApplication, isLive } from "../lib/submit"
 
 /*
- * DEMO ONLY. This form has no action/method, never calls fetch/XHR, and keeps
- * answers in memory only. They are cleared when the demo is "submitted".
+ * Demo form: answers stay in memory until submit.
+ * When VITE_TELEGRAM_API_URL is set, submit POSTs a summary to the Worker
+ * (which holds Telegram secrets). No bot token in the client.
  */
 
-const STEPS = ["Personal Details", "Employment & Income", "Mortgage Loan Details"] as const
 const COUNTRIES = ["United Arab Emirates", "Saudi Arabia", "Qatar", "Kuwait", "Bahrain", "Oman", "Jordan", "Egypt", "Lebanon", "United Kingdom", "United States", "Other"]
 
+const LOAN_TYPES = [
+  { id: "Mortgage", icon: Home, hint: "Buy or refinance a home" },
+  { id: "Personal", icon: UserRound, hint: "Flexible use of funds" },
+  { id: "Auto/Car", icon: Car, hint: "Finance a vehicle" },
+  { id: "Business", icon: Briefcase, hint: "Grow or start a company" },
+  { id: "Education", icon: GraduationCap, hint: "School or training costs" },
+] as const
+
+const AMOUNT_RANGE: Record<string, { min: number; max: number; step: number; default: number }> = {
+  Mortgage: { min: 50000, max: 2000000, step: 5000, default: 350000 },
+  Personal: { min: 1000, max: 75000, step: 500, default: 15000 },
+  "Auto/Car": { min: 3000, max: 150000, step: 500, default: 25000 },
+  Business: { min: 5000, max: 500000, step: 1000, default: 50000 },
+  Education: { min: 1000, max: 100000, step: 500, default: 20000 },
+}
+
+const DURATIONS: Record<string, string[]> = {
+  Mortgage: ["10 years", "15 years", "20 years", "25 years", "30 years"],
+  Personal: ["12 months", "24 months", "36 months", "48 months", "60 months"],
+  "Auto/Car": ["24 months", "36 months", "48 months", "60 months", "72 months"],
+  Business: ["12 months", "24 months", "36 months", "48 months", "60 months"],
+  Education: ["12 months", "24 months", "36 months", "48 months", "60 months"],
+}
+
 type Data = Record<string, string>
+const fmt = new Intl.NumberFormat("en-US")
 
 const inputCls =
   "w-full rounded-xl border border-white/15 bg-abyss/60 px-4 py-3 text-[15px] text-frost placeholder:text-mist/55 transition-[border-color,box-shadow] " +
   "hover:border-white/25 focus:border-ion focus:outline-none focus:ring-4 focus:ring-electric/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow " +
   "aria-[invalid=true]:border-rose-400/70 [color-scheme:dark]"
 
-function Row({ label, htmlFor, children, hint, groupId }: { label: string; htmlFor?: string; children: ReactNode; hint?: string; groupId?: string }) {
+function Row({ label, htmlFor, children, hint, groupId, optional }: { label: string; htmlFor?: string; children: ReactNode; hint?: string; groupId?: string; optional?: boolean }) {
   return (
     <div className="grid gap-2 border-t border-white/[.06] py-5 first:border-t-0 md:grid-cols-[200px_1fr] md:gap-8">
       <div className="md:pt-3">
         {htmlFor ? (
-          <label htmlFor={htmlFor} className="text-[15px] font-medium text-frost">{label} <span aria-hidden className="text-glow">*</span></label>
+          <label htmlFor={htmlFor} className="text-[15px] font-medium text-frost">{label}{!optional && <span aria-hidden className="text-glow"> *</span>}</label>
         ) : (
-          <p id={groupId} className="text-[15px] font-medium text-frost">{label} <span aria-hidden className="text-glow">*</span></p>
+          <p id={groupId} className="text-[15px] font-medium text-frost">{label}{!optional && <span aria-hidden className="text-glow"> *</span>}</p>
         )}
         {hint && <p className="mt-1 text-xs text-mist/80">{hint}</p>}
       </div>
@@ -98,11 +126,41 @@ export function MortgageForm() {
   const topRef = useRef<HTMLDivElement>(null)
   const set = (k: string, v: string) => setData((d) => ({ ...d, [k]: v }))
 
+  const loanType = data["loan-type"] || ""
+  const range = AMOUNT_RANGE[loanType] || AMOUNT_RANGE.Personal
+  const durations = DURATIONS[loanType] || DURATIONS.Personal
+  const amountNum = money(data["loan-amount"])
+
+  const pickLoanType = (id: string) => {
+    const r = AMOUNT_RANGE[id]
+    const durs = DURATIONS[id]
+    setData((prev) => ({
+      ...prev,
+      "loan-type": id,
+      "loan-amount": prev["loan-amount"] && money(prev["loan-amount"]) >= r.min && money(prev["loan-amount"]) <= r.max
+        ? prev["loan-amount"]
+        : String(r.default),
+      "loan-duration": durs.includes(prev["loan-duration"] || "") ? prev["loan-duration"] : durs[Math.min(2, durs.length - 1)],
+    }))
+  }
+
+  const setAmount = (raw: string) => {
+    const digits = raw.replace(/[^\d]/g, "")
+    if (!digits) { set("loan-amount", ""); return }
+    const n = Math.min(range.max, Math.max(0, Number(digits)))
+    set("loan-amount", String(n))
+  }
+
   const validate = () => {
     const f = formRef.current!
     const els = [...f.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select")]
     els.forEach((el) => el.removeAttribute("aria-invalid"))
     const bad = els.filter((el) => !el.checkValidity())
+    // amount range check
+    if (data["loan-type"] && (amountNum < range.min || amountNum > range.max)) {
+      const el = f.querySelector<HTMLInputElement>("#loan-amount")
+      if (el) { el.setAttribute("aria-invalid", "true"); bad.push(el) }
+    }
     bad.forEach((el) => el.setAttribute("aria-invalid", "true"))
     const count = new Set(bad.map((el) => el.name || el.id)).size
     if (bad.length) {
@@ -119,8 +177,13 @@ export function MortgageForm() {
   const back = () => { setError(""); setStep((s) => s - 1); scrollTop() }
 
   const value = money(data["property-value"]), down = money(data["down-payment"])
-  const loan = Math.max(value - down, 0)
-  const ltv = value > 0 ? Math.round((loan / value) * 100) : 0
+  const computedLoan = Math.max(value - down, 0)
+  const ltv = value > 0 ? Math.round((computedLoan / value) * 100) : 0
+
+  const stepLabels = useMemo(() => {
+    const third = loanType === "Mortgage" ? "Mortgage Details" : loanType ? `${loanType} Details` : "Loan Details"
+    return ["Personal Details", "Employment & Income", third] as const
+  }, [loanType])
 
   if (done) {
     return (
@@ -133,7 +196,7 @@ export function MortgageForm() {
         <p className="mx-auto mt-4 max-w-lg leading-relaxed text-mist">
           {delivered
             ? "Your answers were forwarded to Avant Loans Middle East via Telegram. This is still a design demo: no real lender reviewed them, and no loan was created."
-            : "In a real product, this is where your mortgage application would be submitted. This is a demo, so your answers were not sent, saved or shared anywhere, and they have been cleared from this page."}
+            : "In a real product, this is where your loan application would be submitted. This is a demo, so your answers were not sent, saved or shared anywhere, and they have been cleared from this page."}
         </p>
         <button type="button" onClick={() => { setDone(false); setDelivered(false); setStep(0) }}
           className="mt-8 rounded-full border border-white/20 px-6 py-3 text-sm font-semibold hover:border-ion">Start a new demo application</button>
@@ -143,10 +206,9 @@ export function MortgageForm() {
 
   return (
     <div ref={topRef} className="scroll-mt-28">
-      {/* Stepper */}
       <nav aria-label="Application progress" className="mb-8">
         <ol className="grid grid-cols-3 gap-2">
-          {STEPS.map((s, i) => {
+          {stepLabels.map((s, i) => {
             const state = i < step ? "done" : i === step ? "current" : "todo"
             return (
               <li key={s} aria-current={state === "current" ? "step" : undefined} className="min-w-0">
@@ -164,7 +226,7 @@ export function MortgageForm() {
           })}
         </ol>
         <p aria-hidden className="mt-3 flex items-center justify-between text-sm sm:hidden">
-          <span><span className="font-display text-glow">0{step + 1}.</span> <span className="text-frost">{STEPS[step]}</span></span>
+          <span><span className="font-display text-glow">0{step + 1}.</span> <span className="text-frost">{stepLabels[step]}</span></span>
           <span className="text-mist">Step {step + 1} of 3</span>
         </p>
       </nav>
@@ -174,7 +236,10 @@ export function MortgageForm() {
         if (step < 2) { next(); return }
         if (!validate() || sending) return
         setSending(true); setError("")
-        const snapshot = { ...data }
+        const snapshot = {
+          ...data,
+          "loan-amount": amountNum ? `$${fmt.format(amountNum)}` : data["loan-amount"],
+        }
         const result = await submitApplication(snapshot)
         setSending(false)
         if (isLive && !result.delivered) {
@@ -184,21 +249,78 @@ export function MortgageForm() {
         setDelivered(result.delivered)
         setData({}); setDone(true); scrollTop()
       }} className="glass edge-glow rounded-[28px] p-5 sm:p-10">
-        <h1 className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-semibold leading-tight tracking-tight">Online Mortgage Application Form</h1>
+        <h1 className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-semibold leading-tight tracking-tight">Online Loan Application Form</h1>
         <p className="mt-3 max-w-2xl leading-relaxed text-mist">
-          Please fill in our Mortgage Application Form. All fields marked <span className="text-glow">*</span> are required to prepare a complete and accurate mortgage loan offer.
-          <span className="mt-2 block text-sm text-amber-100/90">Demo only: nothing you enter here is sent or stored.</span>
+          Please fill in our application form. All fields marked <span className="text-glow">*</span> are required to prepare a complete and accurate loan offer.
+          <span className="mt-2 block text-sm text-amber-100/90">
+            {isLive
+              ? "Demo site — not a real lender. On submit, a summary is sent to Avant via Telegram. No real loan is created."
+              : "Demo only: nothing you enter here is sent or stored."}
+          </span>
         </p>
         <div className="mt-6 h-px bg-gradient-to-r from-ion/50 via-white/10 to-transparent" />
 
-        <p className="sr-only" aria-live="polite">Step {step + 1} of 3: {STEPS[step]}</p>
+        <p className="sr-only" aria-live="polite">Step {step + 1} of 3: {stepLabels[step]}</p>
         <AnimatePresence mode="wait" initial={false}>
           <motion.fieldset key={step}
             initial={reduced ? false : { opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={reduced ? undefined : { opacity: 0, x: -30 }}
             transition={{ duration: 0.3, ease: [0.2, 0.7, 0.2, 1] }} className="mt-2 min-w-0">
-            <legend className="sr-only">{STEPS[step]}</legend>
+            <legend className="sr-only">{stepLabels[step]}</legend>
 
             {step === 0 && (<>
+              <Row label="Loan Type" groupId="g-loan-type" hint="Choose the product you want">
+                <div role="radiogroup" aria-labelledby="g-loan-type" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                  {LOAN_TYPES.map((t, i) => {
+                    const Icon = t.icon
+                    const on = loanType === t.id
+                    const id = `loan-type-${i}`
+                    return (
+                      <label key={t.id} htmlFor={id}
+                        className={`relative flex cursor-pointer flex-col items-start gap-2 rounded-2xl border p-4 transition-all has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-glow ${on ? "border-ion bg-electric/20 shadow-[0_0_28px_-8px_rgba(13,91,255,.9)]" : "border-white/12 bg-abyss/40 hover:border-white/25"}`}>
+                        <input id={id} type="radio" name="loan-type" value={t.id} checked={on} required={i === 0}
+                          onChange={() => pickLoanType(t.id)} className="sr-only" />
+                        <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${on ? "bg-electric text-white" : "bg-white/5 text-glow"}`}>
+                          <Icon aria-hidden className="h-5 w-5" />
+                        </span>
+                        <span className={`font-display text-sm font-semibold ${on ? "text-frost" : "text-mist"}`}>{t.id}</span>
+                        <span className="text-xs leading-snug text-mist/80">{t.hint}</span>
+                        {on && <Check aria-hidden className="absolute top-3 right-3 h-4 w-4 text-glow" />}
+                      </label>
+                    )
+                  })}
+                </div>
+              </Row>
+
+              <Row label="Loan Amount" htmlFor="loan-amount" hint={loanType ? `USD · ${fmt.format(range.min)} – ${fmt.format(range.max)}` : "Select a loan type first"}>
+                <div className="relative">
+                  <span aria-hidden className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 font-display text-mist">$</span>
+                  <input id="loan-amount" name="loan-amount" inputMode="numeric" required
+                    disabled={!loanType}
+                    aria-describedby="loan-amount-hint"
+                    min={range.min} max={range.max}
+                    value={amountNum ? fmt.format(amountNum) : ""}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder={loanType ? fmt.format(range.default) : "—"}
+                    className={`${inputCls} pl-8 tabular-nums disabled:opacity-50`} />
+                </div>
+                {loanType && (
+                  <input id="loan-amount-range" type="range" min={range.min} max={range.max} step={range.step}
+                    value={amountNum || range.default}
+                    onChange={(e) => set("loan-amount", e.target.value)}
+                    className="w-full accent-electric" aria-label="Adjust loan amount" />
+                )}
+                <p id="loan-amount-hint" className="text-xs text-mist">
+                  {loanType ? `Asking for $${fmt.format(amountNum || range.default)}` : "Pick a loan type to set amount limits."}
+                </p>
+              </Row>
+
+              <Row label="Loan Duration" htmlFor="loan-duration" hint="How long you want to repay">
+                <Select id="loan-duration" label="Loan Duration" placeholder={loanType ? "Select term…" : "Select a loan type first"}
+                  options={durations} data={data} set={set} />
+              </Row>
+
+              <div className="my-2 h-px bg-white/[.06]" />
+
               <Row label="Your Name" groupId="g-name">
                 <div className="grid gap-3 sm:grid-cols-[1.4fr_1fr]">
                   <Field id="first-name" label="First" autoComplete="given-name" data={data} set={set} />
@@ -263,36 +385,87 @@ export function MortgageForm() {
             </>)}
 
             {step === 2 && (<>
-              <Row label="Loan Purpose" groupId="g-purpose">
-                <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Buy a home", "Refinance", "Home equity", "Build a home"]} data={data} set={set} />
-              </Row>
-              <Row label="Property Type" htmlFor="property-type">
-                <Select id="property-type" label="Property Type" placeholder="Select…" options={["Apartment", "Villa", "Townhouse", "Land / plot", "Other"]} data={data} set={set} />
-              </Row>
-              <Row label="Property Location" groupId="g-ploc">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field id="property-city" label="City" data={data} set={set} />
-                  <Select id="property-country" label="Property country" placeholder="Country" options={COUNTRIES} data={data} set={set} />
+              {loanType && (
+                <div className="mb-2 rounded-2xl border border-ion/30 bg-electric/[.08] p-4 text-sm text-mist">
+                  <span className="font-display text-frost">{loanType}</span>
+                  {" · "}
+                  <span className="tabular-nums">${fmt.format(amountNum || 0)}</span>
+                  {" · "}
+                  <span>{data["loan-duration"] || "—"}</span>
                 </div>
-              </Row>
-              <Row label="Property Value & Down Payment" groupId="g-money" hint="Estimates are fine, in USD">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field id="property-value" label="Estimated property value" inputMode="numeric" pattern="[0-9,.\s]+" data={data} set={set} />
-                  <Field id="down-payment" label="Down payment" inputMode="numeric" pattern="[0-9,.\s]+" data={data} set={set} />
-                </div>
-                <div className="grid grid-cols-2 gap-3 rounded-xl border border-ion/25 bg-electric/[.07] p-4" aria-live="polite">
-                  <div><p className="text-xs text-mist">Loan amount</p><p className="font-display text-xl tabular-nums">${loan.toLocaleString("en-US")}</p></div>
-                  <div><p className="text-xs text-mist">Loan-to-value</p><p className="font-display text-xl tabular-nums">{ltv}%</p></div>
-                </div>
-              </Row>
-              <Row label="Preferred Term" groupId="g-term">
-                <Radios name="term" labelledBy="g-term" cols={2} options={["10 years", "15 years", "20 years", "25 years"]} data={data} set={set} />
-              </Row>
+              )}
+
+              {loanType === "Mortgage" && (<>
+                <Row label="Loan Purpose" groupId="g-purpose">
+                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Buy a home", "Refinance", "Home equity", "Build a home"]} data={data} set={set} />
+                </Row>
+                <Row label="Property Type" htmlFor="property-type">
+                  <Select id="property-type" label="Property Type" placeholder="Select…" options={["Apartment", "Villa", "Townhouse", "Land / plot", "Other"]} data={data} set={set} />
+                </Row>
+                <Row label="Property Location" groupId="g-ploc">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field id="property-city" label="City" data={data} set={set} />
+                    <Select id="property-country" label="Property country" placeholder="Country" options={COUNTRIES} data={data} set={set} />
+                  </div>
+                </Row>
+                <Row label="Property Value & Down Payment" groupId="g-money" hint="Estimates are fine, in USD">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field id="property-value" label="Estimated property value" inputMode="numeric" pattern="[0-9,.\s]+" data={data} set={set} />
+                    <Field id="down-payment" label="Down payment" inputMode="numeric" pattern="[0-9,.\s]+" data={data} set={set} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 rounded-xl border border-ion/25 bg-electric/[.07] p-4" aria-live="polite">
+                    <div><p className="text-xs text-mist">From property math</p><p className="font-display text-xl tabular-nums">${fmt.format(computedLoan)}</p></div>
+                    <div><p className="text-xs text-mist">Loan-to-value</p><p className="font-display text-xl tabular-nums">{ltv}%</p></div>
+                  </div>
+                </Row>
+              </>)}
+
+              {loanType === "Auto/Car" && (<>
+                <Row label="Vehicle" groupId="g-vehicle">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Field id="vehicle-make" label="Make" data={data} set={set} />
+                    <Field id="vehicle-model" label="Model" data={data} set={set} />
+                    <Field id="vehicle-year" label="Year" inputMode="numeric" pattern="[0-9]{4}" data={data} set={set} />
+                  </div>
+                </Row>
+                <Row label="Use of Funds" groupId="g-purpose">
+                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Buy new vehicle", "Buy used vehicle", "Refinance auto loan"]} data={data} set={set} />
+                </Row>
+              </>)}
+
+              {loanType === "Business" && (<>
+                <Row label="Business Name" htmlFor="business-name">
+                  <Field id="business-name" label="Registered business name" data={data} set={set} />
+                </Row>
+                <Row label="Use of Funds" groupId="g-purpose">
+                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Working capital", "Equipment", "Expansion", "Start-up costs"]} data={data} set={set} />
+                </Row>
+              </>)}
+
+              {loanType === "Education" && (<>
+                <Row label="School / Program" htmlFor="school-name">
+                  <Field id="school-name" label="School or program name" data={data} set={set} />
+                </Row>
+                <Row label="Use of Funds" groupId="g-purpose">
+                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Tuition", "Living expenses", "Both tuition and living"]} data={data} set={set} />
+                </Row>
+              </>)}
+
+              {loanType === "Personal" && (<>
+                <Row label="Use of Funds" groupId="g-purpose">
+                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Debt consolidation", "Home improvement", "Medical", "Travel", "Other"]} data={data} set={set} />
+                </Row>
+              </>)}
+
+              {!loanType && (
+                <p className="py-6 text-mist">Go back to step 1 and choose a loan type.</p>
+              )}
+
               <Row label="Consent" groupId="g-consent">
                 <label htmlFor="consent" className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-mist">
                   <input id="consent" name="consent" type="checkbox" required checked={data.consent === "yes"} onChange={(e) => set("consent", e.target.checked ? "yes" : "")}
                     className="mt-0.5 h-5 w-5 flex-none accent-electric" />
-                  <span>I confirm the details are accurate and I understand this is a <strong className="text-frost">demo</strong>: no real mortgage is offered and nothing is sent.</span>
+                  <span>I confirm the details are accurate and I understand this is a <strong className="text-frost">demo</strong>: no real loan is offered{isLive ? ", though a summary will be sent to Avant via Telegram" : ""}.</span>
                 </label>
               </Row>
             </>)}

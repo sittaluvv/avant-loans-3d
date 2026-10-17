@@ -1,4 +1,5 @@
 name = "avant-loans-telegram"
+account_id = "ec51c3f3c30807a40b08f8f72961a4bd"
 main = "telegram-worker.js"
 compatibility_date = "2024-10-01"
 
