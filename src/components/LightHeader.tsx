@@ -1,23 +1,37 @@
+import { useEffect, useState } from "react"
 import { APPLY_URL, BASE } from "./Header"
 import { Logo } from "./Logo"
 
-export function LightHeader() {
+/** overlay: header floats over the dark hero video (white logo/nav) and turns light after scrolling. */
+export function LightHeader({ overlay = false }: { overlay?: boolean }) {
+  const [scrolled, setScrolled] = useState(!overlay)
+  useEffect(() => {
+    if (!overlay) return
+    const on = () => setScrolled(window.scrollY > 24)
+    on(); window.addEventListener("scroll", on, { passive: true })
+    return () => window.removeEventListener("scroll", on)
+  }, [overlay])
+  const dark = overlay && !scrolled
   return (
-    <header className="sticky top-0 z-50 border-b border-[#3B2BBF]/10 bg-white/75 backdrop-blur-md">
+    <header
+      className={`${overlay ? "fixed inset-x-0" : "sticky"} top-0 z-50 border-b transition-[background-color,border-color,box-shadow] duration-300 ${
+        dark ? "border-white/10 bg-gradient-to-b from-[#120d33]/60 to-transparent" : "border-[#3B2BBF]/10 bg-white/85 shadow-[0_8px_30px_-24px_rgba(59,43,191,.5)] backdrop-blur-md"
+      }`}
+    >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-8 sm:py-3.5">
-        <a href={BASE} aria-label="Avant Loans Middle East home" className="rounded-lg">
-          <Logo className="h-9 sm:h-11 lg:h-12" onDark={false} />
+        <a href={BASE} aria-label="Avant Loans Middle East home" className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current">
+          <Logo className="h-9 sm:h-11 lg:h-12" variant={dark ? "white" : "color"} />
         </a>
-        <nav aria-label="Main" className="hidden items-center gap-8 text-sm font-semibold text-slate-600 md:flex">
-          <a href="#loan-types" className="hover:text-[#3B2BBF]">Loans</a>
-          <a href="#benefits" className="hover:text-[#3B2BBF]">Why Avant</a>
-          <a href="#how" className="hover:text-[#3B2BBF]">How it works</a>
-          <a href="#reviews" className="hover:text-[#3B2BBF]">Reviews</a>
-          <a href={APPLY_URL} className="hover:text-[#3B2BBF]">Apply</a>
+        <nav aria-label="Main" className={`hidden items-center gap-8 text-sm font-semibold md:flex ${dark ? "text-white/85" : "text-slate-600"}`}>
+          {[["#loan-types", "Loans"], ["#benefits", "Why Avant"], ["#how", "How it works"], ["#reviews", "Reviews"], [APPLY_URL, "Apply"]].map(([href, label]) => (
+            <a key={label} href={href} className={dark ? "hover:text-white" : "hover:text-[#3B2BBF]"}>{label}</a>
+          ))}
         </nav>
         <a
           href={APPLY_URL}
-          className="rounded-full bg-[#3B2BBF] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_28px_-12px_rgba(59,43,191,.8)] transition-colors hover:bg-[#2f22a0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]"
+          className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+            dark ? "bg-white text-[#3B2BBF] hover:bg-[#F3F0FF] focus-visible:outline-white" : "bg-[#3B2BBF] text-white shadow-[0_10px_28px_-12px_rgba(59,43,191,.8)] hover:bg-[#2f22a0] focus-visible:outline-[#3B2BBF]"
+          }`}
         >
           Apply for Loan
         </a>

@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from "motion/react"
 import { LightHeader } from "./components/LightHeader"
-import { HeroCluster } from "./components/HeroCluster"
+import { HeroVideo } from "./components/HeroVideo"
 import { APPLY_URL } from "./components/Header"
 import { Logo } from "./components/Logo"
 import { Reviews } from "./components/Reviews"
@@ -38,61 +38,15 @@ const steps = [
 export default function App() {
   const reduced = useReducedMotion()
   return (
-    <div className="min-h-svh overflow-x-hidden bg-[linear-gradient(180deg,#F3F0FF_0%,#FFFFFF_38%,#FFFFFF_100%)] text-slate-900 antialiased">
+    <div className="min-h-svh overflow-x-hidden bg-[linear-gradient(180deg,#F3F0FF_0%,#F3F0FF_12%,#FFFFFF_40%,#FFFFFF_100%)] text-slate-900 antialiased">
       <a href={APPLY_URL} className="sr-only z-[60] rounded-full bg-[#3B2BBF] px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-4 focus:left-4">
         Skip to application
       </a>
-      <LightHeader />
+      <LightHeader overlay />
 
       <main>
-        {/* HERO */}
-        <section className="relative overflow-hidden">
-          <div aria-hidden className="pointer-events-none absolute -top-24 right-[-10%] h-80 w-80 rounded-full bg-[#3B2BBF]/10 blur-3xl" />
-          <div aria-hidden className="pointer-events-none absolute top-40 left-[-8%] h-64 w-64 rounded-full bg-[#F5C451]/15 blur-3xl" />
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 lg:py-20">
-            <div>
-              <motion.p
-                initial={reduced ? false : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#3B2BBF]/15 bg-white/70 px-3.5 py-1.5 text-xs font-semibold text-[#3B2BBF] shadow-sm sm:text-sm"
-              >
-                <span className="h-2 w-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]" />
-                Soft check · no credit score impact
-              </motion.p>
-              <motion.h1
-                initial={reduced ? false : { opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55 }}
-                className="font-display text-[clamp(2.5rem,5.4vw,3.9rem)] font-extrabold leading-[1.05] tracking-tight text-slate-900"
-              >
-                Move forward with a{" "}
-                <span className="bg-gradient-to-r from-[#3B2BBF] to-[#5B4DFF] bg-clip-text text-transparent">personal loan</span>
-              </motion.h1>
-              <p className="mt-5 max-w-md text-lg leading-relaxed text-slate-600">
-                Simple, fast, and transparent. Check your options in minutes — then manage everything from your phone.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <a
-                  href={APPLY_URL}
-                  className="inline-flex items-center justify-center rounded-full bg-[#3B2BBF] px-8 py-3.5 text-base font-semibold text-white shadow-[0_16px_40px_-14px_rgba(59,43,191,.85)] transition-transform hover:scale-[1.02] hover:bg-[#2f22a0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]"
-                >
-                  Apply for Loan
-                </a>
-                <a href="#loan-types" className="text-sm font-semibold text-[#3B2BBF] underline-offset-4 hover:underline">
-                  Browse loan types
-                </a>
-              </div>
-              <p className="mt-3 text-sm text-slate-500">Checking options won’t affect your credit score.</p>
-            </div>
-
-            <figure className="relative" aria-label="3D artwork: credit card, coins, house and car">
-              <HeroCluster />
-              <figcaption className="sr-only">
-                Floating 3D credit card with gold coins, a house and a car, plus chips reading Approved in minutes and APR from 4.9 percent.
-              </figcaption>
-            </figure>
-          </div>
-        </section>
+        {/* HERO: original boardroom handshake video */}
+        <HeroVideo />
 
         {/* LOAN TYPES */}
         <section id="loan-types" className="scroll-mt-24 px-5 py-16 sm:px-8 sm:py-20">
