@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent } from "react"
 import { Camera, FileText, Lock, RefreshCw, Trash2, UploadCloud } from "lucide-react"
+import { Ar } from "../i18n/Ar"
+import { AR } from "../i18n/ar"
 
 export const ID_TYPES = ["Passport", "Resident card (Emirates ID / Iqama / residence permit)", "National ID"] as const
 export const MAX_ID_BYTES = 5 * 1024 * 1024
@@ -47,6 +49,7 @@ function DropZone({ side, label, optional, file, error, onFile, onRemove }: {
     <div>
       <p className="mb-2 text-sm font-semibold text-slate-700">
         {label}{optional ? <span className="font-normal text-slate-500"> (optional)</span> : <span aria-hidden className="text-[#3B2BBF]"> *</span>}
+        <Ar text={AR[label] && (optional ? `${AR[label]} ${AR["(optional)"]}` : AR[label])} />
       </p>
       <input ref={inputRef} id={id} name={id} type="file" accept={ID_ACCEPT} className="sr-only"
         aria-describedby={error ? errId : `${id}-hint`} aria-invalid={error ? true : undefined}
@@ -86,15 +89,17 @@ function DropZone({ side, label, optional, file, error, onFile, onRemove }: {
               className="font-semibold text-[#3B2BBF] underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">
               choose a file
             </button>
+            <Ar en="Drag & drop, or choose a file" className="hidden text-center sm:block" />
+            <Ar en="choose a file" className="text-center sm:hidden" />
           </p>
           <button type="button" onClick={() => camRef.current?.click()}
             className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#3B2BBF] px-4 py-2 text-xs font-semibold text-white sm:hidden">
-            <Camera aria-hidden className="h-4 w-4" /> Take a photo
+            <Camera aria-hidden className="h-4 w-4" /> <span className="leading-tight">Take a photo<Ar en="Take a photo" className="text-center !text-white/85" /></span>
           </button>
           <p id={`${id}-hint`} className="mt-2 text-xs text-slate-500">JPG, PNG or PDF · max 5 MB</p>
         </div>
       )}
-      {error && <p id={errId} role="alert" className="mt-2 text-xs font-medium text-rose-700">{error}</p>}
+      {error && <p id={errId} role="alert" className="mt-2 text-xs font-medium text-rose-700">{error}<Ar en={error} className="!text-rose-700/80" /></p>}
     </div>
   )
 }
@@ -106,6 +111,7 @@ export function IdPrivacyNote() {
       <span>
         <strong className="text-slate-800">Privacy:</strong> your ID is sent over an encrypted connection only to our team, and only when you submit.
         It is not stored on this website.
+        <Ar en="Privacy: your ID is sent over an encrypted connection only to our team, and only when you submit. It is not stored on this website." className="mt-1" />
       </span>
     </p>
   )

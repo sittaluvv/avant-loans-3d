@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { X } from "lucide-react"
 import { APPLY_URL } from "./Header"
 import { LOAN_TYPE_LIST, OPEN_PICKER_EVENT, applyUrlFor } from "../lib/loanTypes"
+import { Ar } from "../i18n/Ar"
 import { loanRange, formatMoney, formatNumber, useCurrency } from "../lib/currency"
 
 /**
@@ -42,7 +43,7 @@ export function LoanTypePicker({ showRanges = true }: { showRanges?: boolean } =
         <div aria-hidden className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200 sm:hidden" />
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 id="loan-picker-title" className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Choose your loan type</h2>
+            <h2 id="loan-picker-title" className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Choose your loan type<Ar en="Choose your loan type" className="mt-0.5 text-[0.55em] font-medium tracking-normal" /></h2>
             <p className="mt-1 text-sm text-slate-600">Pick one to start your application. You can change it later.</p>
           </div>
           <button type="button" onClick={close} aria-label="Close"
@@ -58,7 +59,7 @@ export function LoanTypePicker({ showRanges = true }: { showRanges?: boolean } =
                 <a href={applyUrlFor(APPLY_URL, t.slug)} data-slug={t.slug}
                   className="group flex h-full flex-col items-center gap-1.5 rounded-2xl border border-slate-200 bg-white p-4 text-center transition-all hover:-translate-y-0.5 hover:border-[#3B2BBF]/40 hover:shadow-[0_16px_36px_-18px_rgba(59,43,191,.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
                   <img src={t.img} alt="" width={256} height={256} className="h-14 w-14 object-contain drop-shadow-md transition-transform group-hover:scale-110 motion-reduce:transition-none sm:h-16 sm:w-16" />
-                  <span className="font-display text-sm font-semibold text-slate-900">{t.label}</span>
+                  <span className="font-display text-sm font-semibold text-slate-900">{t.label}<Ar en={t.label} className="text-center" /></span>
                   <span className="text-xs leading-snug text-slate-500">{t.hint}</span>
                   {showRanges && <span className="mt-1 text-[11px] font-semibold tabular-nums text-[#3B2BBF]">{formatMoney(r.min, code)} – {formatNumber(r.max)}</span>}
                 </a>

@@ -11,6 +11,8 @@ import { submitApplication, isLive } from "../lib/submit"
 import { SUBMIT_NOTICE } from "../lib/legal"
 import { loanTypeById, loanTypeBySlug } from "../lib/loanTypes"
 import { IdUploads, IdPrivacyNote, ID_TYPES, checkIdFile, type IdFiles, type IdSide } from "./IdUpload"
+import { Ar } from "../i18n/Ar"
+import { AR, ar as ar_ } from "../i18n/ar"
 
 /*
  * Answers stay in memory until submit.
@@ -66,9 +68,9 @@ function Row({ label, htmlFor, children, hint, groupId, optional }: { label: str
     <div className="grid gap-2 border-t border-slate-100 py-5 first:border-t-0 md:grid-cols-[200px_1fr] md:gap-8">
       <div className="md:pt-3">
         {htmlFor ? (
-          <label htmlFor={htmlFor} className="text-[15px] font-semibold text-slate-800">{label}{!optional && <span aria-hidden className="text-[#3B2BBF]"> *</span>}</label>
+          <label htmlFor={htmlFor} className="block text-[15px] font-semibold text-slate-800">{label}{!optional && <span aria-hidden className="text-[#3B2BBF]"> *</span>}<Ar en={label} /></label>
         ) : (
-          <p id={groupId} className="text-[15px] font-semibold text-slate-800">{label}{!optional && <span aria-hidden className="text-[#3B2BBF]"> *</span>}</p>
+          <p id={groupId} className="text-[15px] font-semibold text-slate-800">{label}{!optional && <span aria-hidden className="text-[#3B2BBF]"> *</span>}<Ar en={label} /></p>
         )}
         {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
       </div>
@@ -77,19 +79,20 @@ function Row({ label, htmlFor, children, hint, groupId, optional }: { label: str
   )
 }
 
-function Field({ id, label, data, set, type = "text", optional, ...rest }: {
-  id: string; label: string; data: Data; set: (k: string, v: string) => void; type?: string; optional?: boolean
+function Field({ id, label, data, set, type = "text", optional, noAr, ...rest }: {
+  id: string; label: string; data: Data; set: (k: string, v: string) => void; type?: string; optional?: boolean; noAr?: boolean
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div>
       <label htmlFor={id} className="sr-only">{label}</label>
       <input id={id} name={id} type={type} placeholder={label + (optional ? " (optional)" : "")} required={!optional}
         value={data[id] ?? ""} onChange={(e) => set(id, e.target.value)} className={inputCls} {...rest} />
+      {!noAr && <Ar en={label} text={AR[label] && (optional ? `${AR[label]} ${AR["(optional)"]}` : AR[label])} className="mt-1 px-1 text-[13px]" />}
     </div>
   )
 }
 
-function Select({ id, label, options, data, set, placeholder }: { id: string; label: string; options: string[]; data: Data; set: (k: string, v: string) => void; placeholder: string }) {
+function Select({ id, label, options, data, set, placeholder, caption }: { id: string; label: string; options: string[]; data: Data; set: (k: string, v: string) => void; placeholder: string; caption?: boolean }) {
   return (
     <div className="relative">
       <label htmlFor={id} className="sr-only">{label}</label>
@@ -98,7 +101,9 @@ function Select({ id, label, options, data, set, placeholder }: { id: string; la
         <option value="" disabled>{placeholder}</option>
         {options.map((o) => <option key={o} value={o} className="bg-white text-slate-900">{o}</option>)}
       </select>
-      <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <ChevronDown aria-hidden className="pointer-events-none absolute top-[1.55rem] right-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      {/* Arabic of what the box shows: the chosen option, else the placeholder (Country: its label) */}
+      <Ar en={data[id] || (caption ? label : placeholder)} className="mt-1 px-1 text-[13px]" />
     </div>
   )
 }
@@ -116,7 +121,7 @@ function Radios({ name, options, data, set, labelledBy, cols = 1 }: { name: stri
             <span aria-hidden className={`flex h-5 w-5 flex-none items-center justify-center rounded-full border ${on ? "border-[#3B2BBF] bg-[#3B2BBF]" : "border-slate-300 bg-white"}`}>
               {on && <span className="h-2 w-2 rounded-full bg-white" />}
             </span>
-            {o}
+            <span className="min-w-0">{o}<Ar en={o} /></span>
           </label>
         )
       })}
@@ -181,6 +186,7 @@ export function MortgageForm() {
   const amountNum = money(data["loan-amount"])
 
   const pickLoanType = (id: string) => {
+    for (const k of ["loan-duration", "loan-amount"]) document.getElementById(k)?.removeAttribute("aria-invalid") // auto-filled below
     const r = loanRange(id, currency)
     const durs = DURATIONS[id]
     setData((prev) => ({
@@ -301,14 +307,18 @@ export function MortgageForm() {
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#34D399] text-white shadow-[0_12px_32px_-8px_rgba(52,211,153,.8)]"><Check aria-hidden className="h-8 w-8" /></div>
         <h2 className="mt-6 font-display text-2xl font-extrabold text-slate-900 sm:text-3xl">
           {delivered ? "Thank you. Your enquiry was received." : "Nothing was sent."}
+          <Ar en={delivered ? "Thank you. Your enquiry was received." : "Nothing was sent."} className="mt-1 text-center text-[0.62em] font-medium" />
         </h2>
         <p className="mx-auto mt-4 max-w-lg leading-relaxed text-slate-600">
           {delivered
             ? "Our team will contact you using your preferred contact method to discuss your request. Submitting is not a loan offer or approval."
             : "Submission is not connected on this build, so your answers were not sent, saved or shared, and they have been cleared from this page."}
+          <Ar en={delivered
+            ? "Our team will contact you using your preferred contact method to discuss your request. Submitting is not a loan offer or approval."
+            : "Submission is not connected on this build, so your answers were not sent, saved or shared, and they have been cleared from this page."} className="mt-2 text-center" />
         </p>
         <button type="button" onClick={() => { setDone(false); setDelivered(false); setStep(0) }}
-          className="mt-8 rounded-full border border-[#3B2BBF]/30 px-6 py-3 text-sm font-semibold text-[#3B2BBF] hover:bg-[#3B2BBF]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">Start a new enquiry</button>
+          className="mt-8 rounded-full border border-[#3B2BBF]/30 px-6 py-3 text-sm font-semibold text-[#3B2BBF] hover:bg-[#3B2BBF]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">Start a new enquiry<Ar en="Start a new enquiry" className="text-center" /></button>
       </motion.div>
     )
   }
@@ -325,18 +335,18 @@ export function MortgageForm() {
                   <motion.div className="h-full rounded-full bg-gradient-to-r from-[#3B2BBF] to-[#5B4DFF]"
                     initial={false} animate={{ width: state === "todo" ? "0%" : "100%" }} transition={{ duration: reduced ? 0 : 0.5 }} />
                 </div>
-                <p className={`mt-3 hidden items-center gap-2 text-sm sm:flex ${state === "todo" ? "text-slate-400" : "font-semibold text-slate-900"}`}>
+                <p className={`mt-3 hidden items-start gap-2 text-sm sm:flex ${state === "todo" ? "text-slate-400" : "font-semibold text-slate-900"}`}>
                   <span className={`font-display tabular-nums ${state === "current" ? "text-[#3B2BBF]" : ""}`}>{state === "done" ? <Check aria-label="completed" className="inline h-4 w-4 text-[#34D399]" /> : `0${i + 1}.`}</span>
-                  <span>{s}</span>
+                  <span className="min-w-0">{s}<Ar en={s} className={state === "todo" ? "opacity-80" : ""} /></span>
                 </p>
                 <span className="sr-only sm:hidden">{`0${i + 1}. ${s}${state === "done" ? " (completed)" : ""}`}</span>
               </li>
             )
           })}
         </ol>
-        <p aria-hidden className="mt-3 flex items-center justify-between text-sm sm:hidden">
-          <span><span className="font-display font-bold text-[#3B2BBF]">0{step + 1}.</span> <span className="font-semibold text-slate-900">{stepLabels[step]}</span></span>
-          <span className="text-slate-500">Step {step + 1} of 3</span>
+        <p aria-hidden className="mt-3 flex items-start justify-between gap-3 text-sm sm:hidden">
+          <span><span className="font-display font-bold text-[#3B2BBF]">0{step + 1}.</span> <span className="font-semibold text-slate-900">{stepLabels[step]}</span><Ar en={stepLabels[step]} className="ps-6" /></span>
+          <span className="flex-none text-right text-slate-500">Step {step + 1} of 3<Ar en={`Step ${step + 1} of 3`} className="text-right" /></span>
         </p>
       </nav>
 
@@ -363,9 +373,10 @@ export function MortgageForm() {
         setDelivered(result.delivered)
         setData({}); setIdFiles({}); setIdErrors({}); setContactError(""); setDone(true); scrollTop()
       }} className="glass-light rounded-[28px] p-5 sm:p-10">
-        <h1 className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-extrabold leading-tight tracking-tight text-slate-900">Online Loan Application Form</h1>
+        <h1 className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-extrabold leading-tight tracking-tight text-slate-900">Online Loan Application Form<Ar en="Online Loan Application Form" className="mt-1 text-[0.5em] font-medium tracking-normal" /></h1>
         <p className="mt-3 max-w-2xl leading-relaxed text-slate-600">
           Please fill in our application form. All fields marked <span className="text-[#3B2BBF]">*</span> are required so our team can review your enquiry.
+          <Ar en="Please fill in our application form. All fields marked * are required so our team can review your enquiry." className="mt-1" />
         </p>
         <div className="mt-6 h-px bg-gradient-to-r from-[#3B2BBF]/30 via-slate-200 to-transparent" />
 
@@ -379,12 +390,12 @@ export function MortgageForm() {
             {step === 0 && (<>
               <Row label="Loan Type" groupId="g-loan-type" hint={loanType ? "Choose the product you want" : "Choose a loan type to continue"}>
                 {typeLocked && loanType ? (
-                  <div data-testid="loan-type-chip" className="inline-flex w-fit items-center gap-2.5 rounded-full border border-[#3B2BBF]/25 bg-[#3B2BBF]/[.06] py-1.5 pr-1.5 pl-2 text-sm">
+                  <div data-testid="loan-type-chip" className="inline-flex w-fit items-center gap-2.5 rounded-[22px] border border-[#3B2BBF]/25 bg-[#3B2BBF]/[.06] py-1.5 pr-1.5 pl-2 text-sm">
                     <img src={LOAN_TYPES.find((t) => t.id === loanType)?.img} alt="" width={256} height={256} className="h-7 w-7 object-contain" />
-                    <span className="font-semibold text-[#3B2BBF]">{loanTypeById(loanType)?.label ?? loanType}</span>
+                    <span className="font-semibold leading-tight text-[#3B2BBF]">{loanTypeById(loanType)?.label ?? loanType}<Ar en={loanType} /></span>
                     <span aria-hidden className="text-slate-400">·</span>
                     <button type="button" data-testid="loan-type-change" onClick={() => setTypeLocked(false)} aria-label={`Change loan type (currently ${loanTypeById(loanType)?.label ?? loanType})`}
-                      className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-[#3B2BBF] shadow-sm ring-1 ring-[#3B2BBF]/20 hover:bg-[#F3F0FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">Change</button>
+                      className="rounded-full bg-white px-3.5 py-1 text-sm font-semibold leading-tight text-[#3B2BBF] shadow-sm ring-1 ring-[#3B2BBF]/20 hover:bg-[#F3F0FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">Change<Ar en="Change" className="text-center" /></button>
                   </div>
                 ) : (<>
                 <div role="radiogroup" aria-describedby={loanTypeError ? "loan-type-error" : undefined} aria-labelledby="g-loan-type" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -397,14 +408,14 @@ export function MortgageForm() {
                         <input id={id} type="radio" name="loan-type" value={t.id} checked={on} required={i === 0}
                           onChange={() => chooseLoanType(t.id)} className="sr-only" />
                         <img src={t.img} alt="" width={256} height={256} className="h-14 w-14 object-contain drop-shadow-md sm:h-16 sm:w-16" />
-                        <span className={`font-display text-sm font-semibold ${on ? "text-[#3B2BBF]" : "text-slate-800"}`}>{t.id}</span>
+                        <span className={`font-display text-sm font-semibold ${on ? "text-[#3B2BBF]" : "text-slate-800"}`}>{t.id}<Ar en={t.id} className="text-center" /></span>
                         <span className="text-xs leading-snug text-slate-500">{t.hint}</span>
                         {on && <span className="absolute top-2.5 right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#3B2BBF] text-white"><Check aria-hidden className="h-3 w-3" /></span>}
                       </label>
                     )
                   })}
                 </div>
-                {loanTypeError && <p id="loan-type-error" role="alert" className="text-sm font-medium text-rose-700">{loanTypeError}</p>}
+                {loanTypeError && <p id="loan-type-error" role="alert" className="text-sm font-medium text-rose-700">{loanTypeError}<Ar en={loanTypeError} className="!text-rose-700/80" /></p>}
                 </>)}
               </Row>
 
@@ -453,11 +464,11 @@ export function MortgageForm() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field id="postal" label="Postal / Zip Code" autoComplete="postal-code" maxLength={12} data={data} set={set} />
-                  <Select id="country" label="Country" placeholder="Country" options={COUNTRIES} data={data} set={set} />
+                  <Select id="country" caption label="Country" placeholder="Country" options={COUNTRIES} data={data} set={set} />
                 </div>
               </Row>
               <Row label="Birth Date" htmlFor="birth-date" hint="MM/DD/YYYY">
-                <Field id="birth-date" label="Birth Date" type="date" autoComplete="bday" max="2008-10-17" min="1906-01-01" data={data} set={set} />
+                <Field noAr id="birth-date" label="Birth Date" type="date" autoComplete="bday" max="2008-10-17" min="1906-01-01" data={data} set={set} />
               </Row>
               <Row label="Email" htmlFor="email">
                 <Field id="email" label="name@example.com" type="email" autoComplete="email" inputMode="email" data={data} set={set} />
@@ -512,11 +523,12 @@ export function MortgageForm() {
             {step === 2 && (<>
               {loanType && (
                 <div className="mb-2 rounded-2xl border border-[#3B2BBF]/20 bg-[#3B2BBF]/[.05] p-4 text-sm text-slate-600">
-                  <span className="font-display font-bold text-[#3B2BBF]">{loanType}</span>
+                  <span className="font-display font-bold text-[#3B2BBF]">{loanTypeById(loanType)?.label ?? loanType}</span>
                   {" · "}
-                  <span className="tabular-nums">${fmt.format(amountNum || 0)}</span>
+                  <span className="tabular-nums">{formatMoney(amountNum || 0, currency)}</span>
                   {" · "}
                   <span>{data["loan-duration"] || "—"}</span>
+                  <Ar text={[AR[loanType], data["loan-duration"] && ar_(data["loan-duration"])].filter(Boolean).join(" · ")} />
                 </div>
               )}
 
@@ -564,21 +576,21 @@ export function MortgageForm() {
               </>)}
 
               {!loanType && (
-                <p className="py-6 text-slate-500">Go back to step 1 and choose a loan type.</p>
+                <p className="py-6 text-slate-500">Go back to step 1 and choose a loan type.<Ar en="Go back to step 1 and choose a loan type." /></p>
               )}
 
               <div data-id-section className="border-t border-slate-100 pt-5">
-                <h2 className="font-display text-lg font-bold text-slate-900">Identity verification</h2>
-                <p className="mt-1 text-sm text-slate-600">Choose your ID type and upload a clear photo or scan.</p>
+                <h2 className="font-display text-lg font-bold text-slate-900">Identity verification<Ar en="Identity verification" /></h2>
+                <p className="mt-1 text-sm text-slate-600">Choose your ID type and upload a clear photo or scan.<Ar en="Choose your ID type and upload a clear photo or scan." /></p>
               </div>
               <Row label="ID type" groupId="g-id-type">
                 <Radios name="id-type" options={[...ID_TYPES]} data={data} set={set} labelledBy="g-id-type" />
               </Row>
               <Row label="ID number" htmlFor="id-number" hint="As shown on the document">
-                <Field id="id-number" label="ID number" data={data} set={set} autoComplete="off" spellCheck={false} maxLength={30} pattern="[A-Za-z0-9\- ]{4,30}" title="4–30 letters, numbers or dashes" />
+                <Field noAr id="id-number" label="ID number" data={data} set={set} autoComplete="off" spellCheck={false} maxLength={30} pattern="[A-Za-z0-9\- ]{4,30}" title="4–30 letters, numbers or dashes" />
               </Row>
               <Row label="Expiry date" htmlFor="id-expiry" hint="Must be a valid, unexpired ID">
-                <Field id="id-expiry" label="Expiry date" type="date" data={data} set={set} min={todayIso} max="2060-12-31" />
+                <Field noAr id="id-expiry" label="Expiry date" type="date" data={data} set={set} min={todayIso} max="2060-12-31" />
               </Row>
               <Row label="Upload ID" groupId="g-id-upload" hint={data["id-type"] === "Passport" ? "Photo page required; back optional" : "Front and back required"}>
                 <IdUploads idType={data["id-type"] || ""} files={idFiles} errors={idErrors} setFile={setIdFile} />
@@ -611,14 +623,14 @@ export function MortgageForm() {
                         ) : (
                           <span aria-hidden className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#3B2BBF] text-white shadow-[0_10px_24px_-10px_rgba(59,43,191,.9)]"><Mail className="h-6 w-6" strokeWidth={2.2} /></span>
                         )}
-                        <span className={`font-display text-sm font-semibold ${on ? "text-[#3B2BBF]" : "text-slate-800"}`}>{m}</span>
+                        <span className={`font-display text-sm font-semibold ${on ? "text-[#3B2BBF]" : "text-slate-800"}`}>{m}<Ar en={m} className="text-center" /></span>
                         <span className="text-xs leading-snug text-slate-500">{sub}</span>
                         {on && <span className="absolute top-2.5 right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#3B2BBF] text-white"><Check aria-hidden className="h-3 w-3" /></span>}
                       </label>
                     )
                   })}
                 </div>
-                {contactError && <p id="contact-error" role="alert" className="text-sm font-medium text-rose-700">{contactError}</p>}
+                {contactError && <p id="contact-error" role="alert" className="text-sm font-medium text-rose-700">{contactError}<Ar en={contactError} className="!text-rose-700/80" /></p>}
                 <AnimatePresence initial={false} mode="wait">
                   {data["contact-method"] && (
                     <motion.div key={data["contact-method"]}
@@ -627,7 +639,7 @@ export function MortgageForm() {
                       transition={{ duration: 0.25 }} className="overflow-hidden">
                       {data["contact-method"] === "WhatsApp" ? (
                         <div className="grid gap-2 pt-1">
-                          <label htmlFor="whatsapp-number" className="text-sm font-medium text-slate-700">Is this your WhatsApp number? <span className="font-normal text-slate-500">Edit if needed.</span></label>
+                          <label htmlFor="whatsapp-number" className="text-sm font-medium text-slate-700">Is this your WhatsApp number? <span className="font-normal text-slate-500">Edit if needed.</span><Ar en="Is this your WhatsApp number? Edit if needed." /></label>
                           <div className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)] gap-2 sm:max-w-md">
                             <label htmlFor="whatsapp-dial" className="sr-only">Country code</label>
                             <select id="whatsapp-dial" name="whatsapp-dial" required value={data["whatsapp-dial"] ?? "+966"} onChange={(e) => set("whatsapp-dial", e.target.value)} className={inputCls + " px-3"}>
@@ -641,7 +653,7 @@ export function MortgageForm() {
                         </div>
                       ) : (
                         <div className="grid gap-2 pt-1 sm:max-w-md">
-                          <label htmlFor="contact-email" className="text-sm font-medium text-slate-700">We’ll email you at <span className="font-normal text-slate-500">(edit if needed)</span></label>
+                          <label htmlFor="contact-email" className="text-sm font-medium text-slate-700">We’ll email you at <span className="font-normal text-slate-500">(edit if needed)</span><Ar en="We’ll email you at (edit if needed)" /></label>
                           <input id="contact-email" name="contact-email" type="email" inputMode="email" autoComplete="email" required
                             placeholder="name@example.com" value={data["contact-email"] ?? ""} onChange={(e) => set("contact-email", e.target.value)} className={inputCls} />
                         </div>
@@ -659,7 +671,7 @@ export function MortgageForm() {
                     ["Applicant", [data["first-name"], data["last-name"]].filter(Boolean).join(" ")],
                     ["Preferred contact", preferredContactOf(data) || "Not chosen yet"],
                   ] as const).map(([k, v]) => (
-                    <div key={k} className="contents"><dt className="text-slate-500">{k}</dt><dd className={`min-w-0 break-words font-semibold ${k === "Preferred contact" ? "text-[#3B2BBF]" : "text-slate-900"}`}>{v || "—"}</dd></div>
+                    <div key={k} className="contents"><dt className="text-slate-500">{k}<Ar en={k} /></dt><dd className={`min-w-0 break-words font-semibold ${k === "Preferred contact" ? "text-[#3B2BBF]" : "text-slate-900"}`}>{v || "—"}</dd></div>
                   ))}
                 </dl>
               </Row>
@@ -668,31 +680,32 @@ export function MortgageForm() {
                 <label htmlFor="consent" className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-slate-600">
                   <input id="consent" name="consent" type="checkbox" required checked={data.consent === "yes"} onChange={(e) => set("consent", e.target.checked ? "yes" : "")}
                     className="mt-0.5 h-5 w-5 flex-none accent-[#3B2BBF]" />
-                  <span>I confirm the details are accurate and agree that Avant Middle East may contact me about this enquiry.</span>
+                  <span>I confirm the details are accurate and agree that Avant Middle East may contact me about this enquiry.<Ar en="I confirm the details are accurate and agree that Avant Middle East may contact me about this enquiry." className="mt-1" /></span>
                 </label>
               </Row>
             </>)}
           </motion.fieldset>
         </AnimatePresence>
 
-        {error && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</p>}
+        {error && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}<Ar en={error} className="!text-rose-800/80" /></p>}
 
         {step === 2 && (
-          <p data-testid="submit-notice" className="mt-8 text-center text-xs leading-relaxed text-slate-500 sm:text-[13px]">{SUBMIT_NOTICE}</p>
+          <p data-testid="submit-notice" className="mt-8 text-center text-xs leading-relaxed text-slate-500 sm:text-[13px]">{SUBMIT_NOTICE}<Ar en="SUBMIT_NOTICE" className="mx-auto mt-1 max-w-2xl text-center" /></p>
         )}
         <div className={`${step === 2 ? "mt-5" : "mt-8"} flex flex-col-reverse gap-3 sm:flex-row sm:items-center ${step === 0 ? "sm:justify-center" : "sm:justify-between"}`}>
           {step > 0 && (
             <button type="button" onClick={back} className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-7 py-3.5 font-semibold text-slate-700 hover:border-[#3B2BBF] hover:text-[#3B2BBF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">
-              <ArrowLeft aria-hidden className="h-4 w-4" /> Back
+              <ArrowLeft aria-hidden className="h-4 w-4" /> <span className="leading-tight">Back<Ar en="Back" className="text-center" /></span>
             </button>
           )}
           <button type="submit" disabled={sending} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#3B2BBF] px-10 py-3.5 font-semibold text-white shadow-[0_16px_40px_-14px_rgba(59,43,191,.85)] transition-colors hover:bg-[#2f22a0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF] disabled:opacity-70">
-            {sending ? <><Loader2 aria-hidden className="h-4 w-4 animate-spin" /> Sending…</> : step < 2 ? "Next Page" : "Submit Enquiry"}
+            {sending ? <><Loader2 aria-hidden className="h-4 w-4 animate-spin" /> <span className="leading-tight">Sending…<Ar en="Sending…" className="text-center !text-white/85" /></span></>
+              : <span className="leading-tight">{step < 2 ? "Next Page" : "Submit Enquiry"}<Ar en={step < 2 ? "Next Page" : "Submit Enquiry"} className="text-center !text-white/85" /></span>}
           </button>
         </div>
         <p className="mt-5 flex items-center justify-center gap-2 text-center text-xs text-slate-500 sm:text-sm">
           <ShieldCheck aria-hidden className="h-4 w-4 flex-none text-[#34D399]" />
-          {"Your details are sent over an encrypted connection."}
+          <span>{"Your details are sent over an encrypted connection."}<Ar en="Your details are sent over an encrypted connection." className="text-center" /></span>
         </p>
       </form>
     </div>

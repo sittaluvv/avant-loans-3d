@@ -142,3 +142,16 @@ body {
 @keyframes picker-up { from { transform: translateY(100%) } to { transform: none } }
 @keyframes picker-pop { from { opacity: 0; transform: translateY(12px) scale(.97) } to { opacity: 1; transform: none } }
 @keyframes picker-fade { from { opacity: 0 } to { opacity: 1 } }
+
+/* Arabic sub-labels (apply form + loan picker). Left-aligned under the English by default; utilities can override. */
+@layer components {
+  .ar-sub {
+    font-family: "IBM Plex Sans Arabic", var(--font-sans);
+    font-size: max(0.78em, 10.5px);
+    font-weight: 500;
+    line-height: 1.6;
+    letter-spacing: 0;
+    color: #625C94;
+    text-align: left;
+  }
+}
