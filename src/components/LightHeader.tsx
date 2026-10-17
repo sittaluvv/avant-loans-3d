@@ -6,7 +6,7 @@ export function LightHeader() {
     <header className="sticky top-0 z-50 border-b border-[#3B2BBF]/10 bg-white/75 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-8 sm:py-3.5">
         <a href={BASE} aria-label="Avant Loans Middle East home" className="rounded-lg">
-          <Logo className="h-10 sm:h-11" onDark={false} />
+          <Logo className="h-9 sm:h-11 lg:h-12" onDark={false} />
         </a>
         <nav aria-label="Main" className="hidden items-center gap-8 text-sm font-semibold text-slate-600 md:flex">
           <a href="#loan-types" className="hover:text-[#3B2BBF]">Loans</a>

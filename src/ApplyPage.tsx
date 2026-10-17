@@ -15,7 +15,7 @@ export default function ApplyPage() {
       <header className="sticky top-0 z-50 border-b border-[#3B2BBF]/10 bg-white/75 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-8 sm:py-3.5">
           <a href={BASE} aria-label="Avant Loans Middle East home" className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">
-            <Logo className="h-10 sm:h-11" onDark={false} />
+            <Logo className="h-9 sm:h-11 lg:h-12" onDark={false} />
           </a>
           <div className="flex items-center gap-3">
             <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 sm:inline">Demo only</span>

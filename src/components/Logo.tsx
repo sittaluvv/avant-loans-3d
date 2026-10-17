@@ -1,16 +1,18 @@
-import logoWebp from "../assets/logo.webp"
+import logoSvg from "../assets/logo.svg"
 import logoPng from "../assets/logo.png"
 
-export function Logo({ className = "", onDark = true }: { className?: string; onDark?: boolean }) {
+/* Refined flat wordmark (Option 1). SVG for crispness, 2x PNG fallback. */
+export function Logo({ className = "" }: { className?: string; onDark?: boolean }) {
   return (
     <picture>
-      <source srcSet={logoWebp} type="image/webp" />
+      <source srcSet={logoSvg} type="image/svg+xml" />
       <img
         src={logoPng}
         alt="Avant Loans Middle East"
-        width={574}
-        height={220}
-        className={`w-auto ${onDark ? "logo-on-dark" : ""} ${className}`}
+        width={467}
+        height={148}
+        decoding="async"
+        className={`w-auto select-none ${className}`}
       />
     </picture>
   )
