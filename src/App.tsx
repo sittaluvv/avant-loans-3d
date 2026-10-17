@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from "motion/react"
 import { LightHeader } from "./components/LightHeader"
-import { HeroVideo } from "./components/HeroVideo"
+import { HeroPhoto } from "./components/HeroPhoto"
 import { APPLY_URL } from "./components/Header"
 import { WhyUs } from "./components/WhyUs"
 import { LoanTypePicker, pickerLinkProps } from "./components/LoanTypePicker"
@@ -53,8 +53,8 @@ export default function App() {
       <LoanTypePicker />
 
       <main>
-        {/* HERO: original boardroom handshake video */}
-        <HeroVideo />
+        {/* HERO: still photo from our handshake clip */}
+        <HeroPhoto />
 
         {/* LOAN TYPES */}
         <section id="loan-types" className="scroll-mt-24 px-5 py-16 sm:px-8 sm:py-20">

@@ -155,3 +155,8 @@ body {
     text-align: left;
   }
 }
+
+/* Hero photo: very slow, subtle push-in (CSS only). Off for reduced motion. */
+@keyframes hero-kenburns { from { transform: scale(1); } to { transform: scale(1.045); } }
+.hero-kenburns { transform-origin: 70% 55%; animation: hero-kenburns 30s ease-in-out infinite alternate; will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .hero-kenburns { animation: none; } }

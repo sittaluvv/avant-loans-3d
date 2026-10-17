@@ -1,4 +1,4 @@
-"""Release check: hero story video, contrast, currency (mocked /geo), apply trims + employment logic.
+"""Release check: hero photo (no video), LCP, contrast, currency (mocked /geo), apply trims + employment logic.
 Usage: BASE=https://sittaluvv.github.io/avant-loans-3d/ python verify_release.py   (no real Telegram send: POST is intercepted)"""
 import asyncio, json, os, io
 from playwright.async_api import async_playwright
@@ -30,41 +30,40 @@ async def overflow(pg):
 async def hero(b, view):
     c = await ctx(b, view); pg = await c.new_page(); errs = []; watch(pg, errs)
     await pg.goto(BASE, wait_until="networkidle")
-    await pg.wait_for_function("(() => { const v = document.querySelector('video'); return v && v.readyState >= 3 })()", timeout=20000)
-    t0 = await pg.evaluate("document.querySelector('video').currentTime"); await pg.wait_for_timeout(1500)
-    t1 = await pg.evaluate("document.querySelector('video').currentTime")
-    info = await pg.evaluate("(() => { const v = document.querySelector('video'); return { src: v.currentSrc.split('/').pop(), w: v.videoWidth, h: v.videoHeight, dur: v.duration, loop: v.loop, muted: v.muted } })()")
-    # form shows first: frame at t=0.1 should be the bright paper (high mean luminance on the paper area)
-    await pg.evaluate("(() => { const v = document.querySelector('video'); v.pause(); v.currentTime = 0.1 })()"); await pg.wait_for_timeout(600)
-    # contrast: hide text, sample background under each text block at several loop times (incl. intro/stamp/crossfade/handshake)
+    # still photo hero: no <video>, photo decoded, LCP = the photo
+    await pg.wait_for_function("(() => { const i = document.querySelector('[data-testid=hero-photo]'); return i && i.complete && i.naturalWidth > 0 })()", timeout=20000)
+    info = await pg.evaluate("""(() => { const i = document.querySelector('[data-testid=hero-photo]');
+      return { videos: document.querySelectorAll('video').length, src: i.currentSrc.split('/').pop(), natural: [i.naturalWidth, i.naturalHeight],
+               kenburns: getComputedStyle(i).animationName } })()""")
+    info["lcp"] = await pg.evaluate("""() => new Promise(r => { let v = 0, el = ''; new PerformanceObserver(l => { for (const e of l.getEntries()) { v = e.startTime; el = e.element ? (e.element.dataset.testid || e.element.tagName) : e.url } }).observe({type: 'largest-contentful-paint', buffered: true}); setTimeout(() => r({ms: Math.round(v), el}), 800) })""")
+    # contrast: hide text, sample the background under each text block at both ends of the slow zoom
     worst = {}
-    for t in [0.1, 0.6, 1.2, 2.0, 2.8, 3.4, 4.0, 5.0, 7.0, 9.0, 9.8]:
-        await pg.evaluate(f"(() => {{ const v = document.querySelector('video'); v.pause(); v.currentTime = {t} }})()")
-        await pg.wait_for_function(f"Math.abs(document.querySelector('video').currentTime - {t}) < 0.05 && !document.querySelector('video').seeking")
+    for scale in [1.0, 1.045]:
+        await pg.evaluate(f"(() => {{ const i = document.querySelector('[data-testid=hero-photo]'); i.style.animation = 'none'; i.style.transform = 'scale({scale})' }})()")
         await pg.wait_for_timeout(250)
         boxes = await pg.evaluate("""(() => { const sec = document.querySelector('section[aria-labelledby=hero-title]');
-          const els = { h1: sec.querySelector('h1'), sub: sec.querySelector('h1 + p'), note: [...sec.querySelectorAll('p')].pop() };
-          const out = {}; for (const [k, e] of Object.entries(els)) { const r = e.getBoundingClientRect(); out[k] = [r.x, r.y, r.width, r.height, getComputedStyle(e).color] }
+          const els = { h1: sec.querySelector('h1'), h1_accent: sec.querySelector('h1 span'), sub: sec.querySelector('h1 + p'), link: sec.querySelector('a[href="#loan-types"]') };
+          const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d');
+          const rgba = c => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255] };
+          const out = {}; for (const [k, e] of Object.entries(els)) { const r = e.getBoundingClientRect(); out[k] = [r.x, r.y, r.width, r.height, rgba(getComputedStyle(e).color)] }
           sec.querySelector('.max-w-xl').style.visibility = 'hidden'; return out })()""")
-        img = Image.open(io.BytesIO(await pg.screenshot())).convert("RGB"); s = img.width / VIEWS[view]["width"]
+        img = Image.open(io.BytesIO(await pg.screenshot())).convert("RGB"); sc = img.width / VIEWS[view]["width"]
         await pg.evaluate("document.querySelector('section[aria-labelledby=hero-title] .max-w-xl').style.visibility = ''")
         for k, (x, y, w, h, col) in boxes.items():
-            crop = img.crop((int(x * s), int(y * s), int((x + w) * s), int((y + h) * s)))
-            px = sorted(list(crop.convert("RGB").tobytes()[i:i+3] for i in range(0, crop.width*crop.height*3, 3)), key=lum); bg = px[int(len(px) * 0.98)]  # 98th percentile brightest pixel
-            a = 1.0
-            if col.startswith("rgba"): a = float(col.split(",")[-1].strip(" )"))
-            fg = tuple(255 * a + bg[i] * (1 - a) for i in range(3))
+            crop = img.crop((int(x * sc), int(y * sc), int((x + w) * sc), int((y + h) * sc)))
+            px = sorted(list(crop.tobytes()[i:i+3] for i in range(0, crop.width*crop.height*3, 3)), key=lum); bg = px[int(len(px) * 0.98)]  # 98th percentile brightest pixel
+            a = col[3]  # canvas-normalised [r, g, b, alpha]
+            fg = tuple(col[i] * a + bg[i] * (1 - a) for i in range(3))
             cr = (lum(fg) + 0.05) / (lum(bg) + 0.05)
-            if k not in worst or cr < worst[k][0]: worst[k] = (round(cr, 2), t)
-    await pg.evaluate("(() => { const v = document.querySelector('video'); v.currentTime = 2.0 })()"); await pg.wait_for_timeout(500)
-    await pg.screenshot(path=f"{SHOTS}/hero_form_{view}.png")
-    await pg.evaluate("document.querySelector('video').play()")
+            if k not in worst or cr < worst[k][0]: worst[k] = (round(cr, 2), scale)
+    await pg.evaluate("(() => { const i = document.querySelector('[data-testid=hero-photo]'); i.style.animation = ''; i.style.transform = '' })()"); await pg.wait_for_timeout(300)
+    await pg.screenshot(path=f"{SHOTS}/hero_photo_{view}.png")
     foot = pg.locator("[data-testid=site-footer]"); await foot.scroll_into_view_if_needed(); await pg.wait_for_timeout(300)
     if view == "desktop": await foot.screenshot(path=f"{SHOTS}/footer_license.png")
     footer_text = await foot.inner_text()
     R[f"footer_{view}"] = {"company_line": await pg.locator("[data-testid=company-line]").inner_text(), "has_notice": "subject to regulatory approval by the Central Bank of the UAE / SAMA" in footer_text, "has_copyright": "©" in footer_text,
         "page_mentions_demo": await pg.evaluate("/\\bdemo\\b|not a real/i.test(document.body.innerText)")}
-    R[f"hero_{view}"] = {"playing_advance": round(t1 - t0, 2), **info, "contrast_worst(ratio,t)": worst, "overflow": await overflow(pg), "errors": errs}
+    R[f"hero_{view}"] = {**info, "contrast_worst(ratio,scale)": worst, "overflow": await overflow(pg), "errors": errs}
     await c.close()
 
 async def currency(b, view):
@@ -190,7 +189,8 @@ async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox", "--autoplay-policy=no-user-gesture-required"])
         for v in VIEWS:
-            await hero(b, v); await currency(b, v); await apply_flow(b, v)
+            await hero(b, v)
+            if os.environ.get("ONLY") != "hero": await currency(b, v); await apply_flow(b, v)
         await b.close()
     print(json.dumps(R, indent=1, ensure_ascii=False))
 asyncio.run(main())

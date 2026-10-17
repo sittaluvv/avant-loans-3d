@@ -134,7 +134,7 @@ async def main():
         # main homepage untouched
         ctx, pg, errs = await page_for(b, 1440, 900)
         await pg.goto(BASE, wait_until="networkidle")
-        check(await pg.locator("[data-testid=hero-apply]").count() == 1 and await pg.locator("video").count() >= 1, "main homepage still the video hero")
+        check(await pg.locator("[data-testid=hero-apply]").count() == 1 and await pg.locator("[data-testid=hero-photo]").count() == 1 and await pg.locator("video").count() == 0, "main homepage still has its own hero (photo, no video)")
         await ctx.close()
         await b.close()
     print("\nRESULT:", "ALL PASS" if not fails else f"{len(fails)} FAIL")
