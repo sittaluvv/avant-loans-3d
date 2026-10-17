@@ -1,16 +1,18 @@
-import { useMemo, useRef, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { currencyInfo, formatMoney, formatNumber, loanRange, toUsd, useCurrency } from "../lib/currency"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
-import { Check, ChevronDown, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react"
+import { Check, ChevronDown, ShieldCheck, ArrowLeft, Loader2, Mail, MessageCircle, Phone } from "lucide-react"
 import houseImg from "../assets/3d/fluent-house.webp"
 import carImg from "../assets/3d/fluent-car.webp"
 import moneyBagImg from "../assets/3d/fluent-money-bag.webp"
 import briefcaseImg from "../assets/3d/fluent-briefcase.webp"
 import gradCapImg from "../assets/3d/fluent-grad-cap.webp"
 import { submitApplication, isLive } from "../lib/submit"
+import { SUBMIT_NOTICE } from "../lib/legal"
 import { IdUploads, IdPrivacyNote, ID_TYPES, checkIdFile, type IdFiles, type IdSide } from "./IdUpload"
 
 /*
- * Demo form: answers stay in memory until submit.
+ * Answers stay in memory until submit.
  * When VITE_TELEGRAM_API_URL is set, submit POSTs a summary to the Worker
  * (which holds Telegram secrets). No bot token in the client.
  */
@@ -25,14 +27,6 @@ const LOAN_TYPES = [
   { id: "Education", img: gradCapImg, hint: "School or training costs" },
 ] as const
 
-const AMOUNT_RANGE: Record<string, { min: number; max: number; step: number; default: number }> = {
-  Mortgage: { min: 50000, max: 2000000, step: 5000, default: 350000 },
-  Personal: { min: 1000, max: 75000, step: 500, default: 15000 },
-  "Auto/Car": { min: 3000, max: 150000, step: 500, default: 25000 },
-  Business: { min: 5000, max: 500000, step: 1000, default: 50000 },
-  Education: { min: 1000, max: 100000, step: 500, default: 20000 },
-}
-
 const DURATIONS: Record<string, string[]> = {
   Mortgage: ["10 years", "15 years", "20 years", "25 years", "30 years"],
   Personal: ["12 months", "24 months", "36 months", "48 months", "60 months"],
@@ -42,6 +36,23 @@ const DURATIONS: Record<string, string[]> = {
 }
 
 type Data = Record<string, string>
+
+/** Dialling codes for the WhatsApp number (default follows the visitor's currency). */
+const DIAL_CODES = [["+966", "🇸🇦 +966"], ["+971", "🇦🇪 +971"], ["+974", "🇶🇦 +974"], ["+965", "🇰🇼 +965"], ["+973", "🇧🇭 +973"], ["+968", "🇴🇲 +968"], ["+1", "🇺🇸 +1"], ["+44", "🇬🇧 +44"], ["+91", "🇮🇳 +91"], ["+20", "🇪🇬 +20"]] as const
+const DIAL_BY_CURRENCY: Record<string, string> = { SAR: "+966", AED: "+971", QAR: "+974", KWD: "+965", BHD: "+973", OMR: "+968", USD: "+1" }
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+/** "WhatsApp (+966 50 123 4567)" / "Email (name@example.com)" — shown in the review card and at the top of the Telegram message. */
+export function preferredContactOf(d: Data) {
+  if (d["contact-method"] === "WhatsApp") return `WhatsApp (${d["whatsapp-dial"] || ""} ${(d["whatsapp-number"] || "").trim()})`
+  if (d["contact-method"] === "Email") return `Email (${(d["contact-email"] || "").trim()})`
+  return ""
+}
+
+const EMPLOYMENT = ["Employed full-time", "Employed part-time", "Self-employed", "Retired", "Not currently employed"]
+/** Which work fields each employment status needs; everything else is cleared so it is never submitted. */
+const EMP_FIELDS = { employed: ["employer", "job-title", "years-employed"], self: ["own-business-name", "years-in-business"], none: [] as string[] }
+const empKindOf = (v?: string): keyof typeof EMP_FIELDS =>
+  v === "Self-employed" ? "self" : v === "Employed full-time" || v === "Employed part-time" ? "employed" : "none"
 const fmt = new Intl.NumberFormat("en-US")
 
 const inputCls =
@@ -127,7 +138,29 @@ export function MortgageForm() {
   const [error, setError] = useState("")
   const formRef = useRef<HTMLFormElement>(null)
   const topRef = useRef<HTMLDivElement>(null)
-  const set = (k: string, v: string) => setData((d) => ({ ...d, [k]: v }))
+  const set = (k: string, v: string) => {
+    document.getElementById(k)?.removeAttribute("aria-invalid") // clear the red state as soon as the field is edited
+    setData((d) => ({ ...d, [k]: v }))
+  }
+  const { code: currency } = useCurrency()
+  const [contactError, setContactError] = useState("")
+  const chooseContact = (m: "WhatsApp" | "Email") => {
+    setContactError("")
+    setData((d) => ({
+      ...d,
+      "contact-method": m,
+      ...(m === "WhatsApp"
+        ? { "whatsapp-dial": d["whatsapp-dial"] || DIAL_BY_CURRENCY[currency] || "+966", "whatsapp-number": d["whatsapp-number"] ?? (d.mobile || "").replace(/^\+\d{1,3}\s*/, "") }
+        : { "contact-email": d["contact-email"] ?? d.email ?? "" }),
+    }))
+  }
+  const empKind = empKindOf(data.employment)
+  const setEmployment = (v: string) => setData((d) => {
+    const keep = new Set(EMP_FIELDS[empKindOf(v)])
+    const next: Data = { ...d, employment: v }
+    for (const k of [...EMP_FIELDS.employed, ...EMP_FIELDS.self]) if (!keep.has(k)) delete next[k]
+    return next
+  })
   const [idFiles, setIdFiles] = useState<IdFiles>({})
   const [idErrors, setIdErrors] = useState<Partial<Record<IdSide, string>>>({})
   const setIdFile = (side: IdSide, f?: File) => {
@@ -141,12 +174,12 @@ export function MortgageForm() {
   const todayIso = new Date().toISOString().slice(0, 10)
 
   const loanType = data["loan-type"] || ""
-  const range = AMOUNT_RANGE[loanType] || AMOUNT_RANGE.Personal
+  const range = loanRange(loanType || "Personal", currency)
   const durations = DURATIONS[loanType] || DURATIONS.Personal
   const amountNum = money(data["loan-amount"])
 
   const pickLoanType = (id: string) => {
-    const r = AMOUNT_RANGE[id]
+    const r = loanRange(id, currency)
     const durs = DURATIONS[id]
     setData((prev) => ({
       ...prev,
@@ -157,6 +190,23 @@ export function MortgageForm() {
       "loan-duration": durs.includes(prev["loan-duration"] || "") ? prev["loan-duration"] : durs[Math.min(2, durs.length - 1)],
     }))
   }
+
+  // Currency switched: convert the entered amount via USD, snap to the new step, clamp to the new limits.
+  const prevCurrency = useRef(currency)
+  useEffect(() => {
+    const from = prevCurrency.current
+    prevCurrency.current = currency
+    if (from === currency) return
+    setData((prev) => {
+      const n = money(prev["loan-amount"])
+      if (!n || !prev["loan-type"]) return prev
+      const r = loanRange(prev["loan-type"], currency)
+      const usd = toUsd(n, from)
+      const conv = usd * currencyInfo(currency).perUsd
+      const target = Math.min(r.max, Math.max(r.min, Math.round(conv / r.step) * r.step))
+      return { ...prev, "loan-amount": String(target) }
+    })
+  }, [currency])
 
   const setAmount = (raw: string) => {
     const digits = raw.replace(/[^\d]/g, "")
@@ -184,6 +234,16 @@ export function MortgageForm() {
       for (const side of ["front", "back"] as IdSide[]) {
         const el = f.querySelector<HTMLInputElement>(`#id-${side}`)
         if (errs[side] && el) { el.setAttribute("aria-invalid", "true"); bad.push(el) }
+      }
+    }
+    if (step === 2) {
+      if (!data["contact-method"]) {
+        setContactError("Please choose how we should contact you: WhatsApp or Email.")
+        const el = f.querySelector<HTMLInputElement>("#contact-method-0"); if (el) bad.push(el)
+      } else setContactError("")
+      if (data["contact-method"] === "Email") {
+        const el = f.querySelector<HTMLInputElement>("#contact-email")
+        if (el && !EMAIL_RE.test(el.value.trim()) && !bad.includes(el)) bad.push(el)
       }
     }
     bad.forEach((el) => el.setAttribute("aria-invalid", "true"))
@@ -219,15 +279,15 @@ export function MortgageForm() {
         className="glass-light scroll-mt-28 rounded-[28px] p-8 text-center sm:p-12">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#34D399] text-white shadow-[0_12px_32px_-8px_rgba(52,211,153,.8)]"><Check aria-hidden className="h-8 w-8" /></div>
         <h2 className="mt-6 font-display text-2xl font-extrabold text-slate-900 sm:text-3xl">
-          {delivered ? "Application delivered." : "Demo complete. Nothing was sent."}
+          {delivered ? "Thank you. Your enquiry was received." : "Nothing was sent."}
         </h2>
         <p className="mx-auto mt-4 max-w-lg leading-relaxed text-slate-600">
           {delivered
-            ? "Your answers were forwarded to Avant Loans Middle East via Telegram. This is still a design demo: no real lender reviewed them, and no loan was created."
-            : "In a real product, this is where your loan application would be submitted. This is a demo, so your answers were not sent, saved or shared anywhere, and they have been cleared from this page."}
+            ? "Our team will contact you using your preferred contact method to discuss your request. Submitting is not a loan offer or approval."
+            : "Submission is not connected on this build, so your answers were not sent, saved or shared, and they have been cleared from this page."}
         </p>
         <button type="button" onClick={() => { setDone(false); setDelivered(false); setStep(0) }}
-          className="mt-8 rounded-full border border-[#3B2BBF]/30 px-6 py-3 text-sm font-semibold text-[#3B2BBF] hover:bg-[#3B2BBF]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">Start a new demo application</button>
+          className="mt-8 rounded-full border border-[#3B2BBF]/30 px-6 py-3 text-sm font-semibold text-[#3B2BBF] hover:bg-[#3B2BBF]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">Start a new enquiry</button>
       </motion.div>
     )
   }
@@ -266,7 +326,12 @@ export function MortgageForm() {
         setSending(true); setError("")
         const snapshot = {
           ...data,
-          "loan-amount": amountNum ? `$${fmt.format(amountNum)}` : data["loan-amount"],
+          "loan-amount": amountNum ? formatMoney(amountNum, currency) : data["loan-amount"],
+          "loan-currency": currency,
+          preferredContact: preferredContactOf(data),
+          ...Object.fromEntries((["annual-income", "other-income", "monthly-debts"] as const)
+            .filter((k) => (data[k] ?? "").trim()).map((k) => [k, `${currency} ${data[k].trim()}`])),
+          "loan-amount-usd": amountNum ? formatMoney(toUsd(amountNum, currency), "USD") : "",
         }
         const result = await submitApplication(snapshot, idFiles)
         setSending(false)
@@ -275,16 +340,11 @@ export function MortgageForm() {
           return
         }
         setDelivered(result.delivered)
-        setData({}); setIdFiles({}); setIdErrors({}); setDone(true); scrollTop()
+        setData({}); setIdFiles({}); setIdErrors({}); setContactError(""); setDone(true); scrollTop()
       }} className="glass-light rounded-[28px] p-5 sm:p-10">
         <h1 className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-extrabold leading-tight tracking-tight text-slate-900">Online Loan Application Form</h1>
         <p className="mt-3 max-w-2xl leading-relaxed text-slate-600">
           Please fill in our application form. All fields marked <span className="text-[#3B2BBF]">*</span> are required to prepare a complete and accurate loan offer.
-          <span className="mt-3 block rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            {isLive
-              ? "Demo site — not a real lender. On submit, a summary is sent to Avant via Telegram. No real loan is created."
-              : "Demo only: nothing you enter here is sent or stored."}
-          </span>
         </p>
         <div className="mt-6 h-px bg-gradient-to-r from-[#3B2BBF]/30 via-slate-200 to-transparent" />
 
@@ -316,9 +376,9 @@ export function MortgageForm() {
                 </div>
               </Row>
 
-              <Row label="Loan Amount" htmlFor="loan-amount" hint={loanType ? `USD · ${fmt.format(range.min)} – ${fmt.format(range.max)}` : "Select a loan type first"}>
+              <Row label="Loan Amount" htmlFor="loan-amount" hint={loanType ? `${currency} · ${formatNumber(range.min)} – ${formatNumber(range.max)}` : "Select a loan type first"}>
                 <div className="relative">
-                  <span aria-hidden className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 font-display font-semibold text-slate-400">$</span>
+                  <span aria-hidden className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 font-display text-sm font-semibold text-slate-400" data-testid="amount-prefix">{currency}</span>
                   <input id="loan-amount" name="loan-amount" inputMode="numeric" required
                     disabled={!loanType}
                     aria-describedby="loan-amount-hint"
@@ -326,7 +386,7 @@ export function MortgageForm() {
                     value={amountNum ? fmt.format(amountNum) : ""}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder={loanType ? fmt.format(range.default) : "—"}
-                    className={`${inputCls} pl-8 tabular-nums disabled:opacity-50`} />
+                    className={`${inputCls} pl-[3.75rem] tabular-nums disabled:opacity-50`} />
                 </div>
                 {loanType && (
                   <input id="loan-amount-range" type="range" min={range.min} max={range.max} step={range.step}
@@ -335,7 +395,7 @@ export function MortgageForm() {
                     className="w-full accent-[#3B2BBF]" aria-label="Adjust loan amount" />
                 )}
                 <p id="loan-amount-hint" className="text-xs text-slate-500">
-                  {loanType ? `Asking for $${fmt.format(amountNum || range.default)}` : "Pick a loan type to set amount limits."}
+                  {loanType ? `Asking for ${formatMoney(amountNum || range.default, currency)}` : "Pick a loan type to set amount limits."}
                 </p>
               </Row>
 
@@ -373,35 +433,43 @@ export function MortgageForm() {
               <Row label="Marital Status" htmlFor="marital">
                 <Select id="marital" label="Marital Status" placeholder="Select…" options={["Single", "Married", "Divorced", "Widowed", "Separated"]} data={data} set={set} />
               </Row>
-              <Row label="How Many Dependents Do You Have?" htmlFor="dependents">
-                <Field id="dependents" label="0" type="number" min={0} max={20} inputMode="numeric" data={data} set={set} />
-              </Row>
-              <Row label="Current Residency Status" groupId="g-res">
-                <Radios name="residency" labelledBy="g-res" options={["Homeowner", "Tenant", "Living with parents/relatives"]} data={data} set={set} />
-              </Row>
-              <Row label="Is There a Second Applicant?" groupId="g-second">
-                <Radios name="second-applicant" labelledBy="g-second" cols={2} options={["Yes", "No"]} data={data} set={set} />
-              </Row>
             </>)}
 
             {step === 1 && (<>
               <Row label="Employment Status" groupId="g-emp">
-                <Radios name="employment" labelledBy="g-emp" cols={2} options={["Employed full-time", "Employed part-time", "Self-employed", "Retired", "Not currently employed"]} data={data} set={set} />
+                <Radios name="employment" labelledBy="g-emp" cols={2} options={EMPLOYMENT} data={data} set={(_, v) => setEmployment(v)} />
               </Row>
-              <Row label="Employer" groupId="g-employer" hint="Or your business name">
-                <Field id="employer" label="Employer / business name" autoComplete="organization" data={data} set={set} />
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field id="job-title" label="Job title" autoComplete="organization-title" data={data} set={set} />
-                  <Field id="years-employed" label="Years with employer" type="number" min={0} max={60} step="0.5" inputMode="decimal" data={data} set={set} />
-                </div>
-              </Row>
-              <Row label="Gross Annual Income" htmlFor="annual-income" hint="Before tax, in USD">
+              <AnimatePresence initial={false} mode="wait">
+                {empKind !== "none" && (
+                  <motion.div key={empKind} data-testid={`emp-${empKind}`}
+                    initial={reduced ? false : { height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                    exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0 }}
+                    transition={{ duration: 0.28, ease: [0.2, 0.7, 0.2, 1] }}
+                    className="overflow-hidden border-t border-slate-100">
+                    {empKind === "employed" ? (
+                      <Row label="Employer" groupId="g-employer" hint="Where you work now">
+                        <Field id="employer" label="Employer name" autoComplete="organization" data={data} set={set} />
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <Field id="job-title" label="Job title" autoComplete="organization-title" data={data} set={set} />
+                          <Field id="years-employed" label="Years with employer" type="number" min={0} max={60} step="0.5" inputMode="decimal" data={data} set={set} />
+                        </div>
+                      </Row>
+                    ) : (
+                      <Row label="Your Business" groupId="g-own-business" hint="The business you run">
+                        <Field id="own-business-name" label="Business name" autoComplete="organization" data={data} set={set} />
+                        <Field id="years-in-business" label="Years in business" type="number" min={0} max={60} step="0.5" inputMode="decimal" optional data={data} set={set} />
+                      </Row>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <Row label="Gross Annual Income" htmlFor="annual-income" hint={`Before tax, in ${currency}`}>
                 <Field id="annual-income" label="e.g. 85,000" inputMode="numeric" pattern="[0-9,.\s]+" data={data} set={set} />
               </Row>
-              <Row label="Other Monthly Income" htmlFor="other-income" hint="Rental, investments, etc.">
+              <Row label="Other Monthly Income" htmlFor="other-income" hint={`Rental, investments, etc. · ${currency}`}>
                 <Field id="other-income" label="e.g. 500" inputMode="numeric" pattern="[0-9,.\s]+" optional data={data} set={set} />
               </Row>
-              <Row label="Monthly Debt Payments" htmlFor="monthly-debts" hint="Car, cards, other loans">
+              <Row label="Monthly Debt Payments" htmlFor="monthly-debts" hint={`Car, cards, other loans · ${currency}`}>
                 <Field id="monthly-debts" label="e.g. 650" inputMode="numeric" pattern="[0-9,.\s]+" data={data} set={set} />
               </Row>
               <Row label="Pay Frequency" htmlFor="pay-frequency">
@@ -495,11 +563,80 @@ export function MortgageForm() {
                 </div>
               </Row>
 
+              <Row label="How should we contact you?" groupId="g-contact" hint="Choose one">
+                <div role="radiogroup" aria-labelledby="g-contact" aria-describedby={contactError ? "contact-error" : undefined} className="grid grid-cols-2 gap-3 sm:max-w-md">
+                  {([["WhatsApp", "Chat on WhatsApp"], ["Email", "Reply by email"]] as const).map(([m, sub], i) => {
+                    const on = data["contact-method"] === m
+                    return (
+                      <label key={m} htmlFor={`contact-method-${i}`} data-testid={`contact-${m}`}
+                        className={`relative flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border p-4 text-center transition-all has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#3B2BBF] ${on ? "border-[#3B2BBF] bg-[#3B2BBF]/[.07] ring-2 ring-[#3B2BBF]/25 shadow-[0_16px_36px_-18px_rgba(59,43,191,.8)]" : contactError ? "border-rose-300 bg-white" : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#3B2BBF]/40"}`}>
+                        <input id={`contact-method-${i}`} type="radio" name="contact-method" value={m} checked={on} required={i === 0}
+                          onChange={() => chooseContact(m)} className="sr-only" />
+                        {m === "WhatsApp" ? (
+                          <span aria-hidden className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-[#25D366] text-white shadow-[0_10px_24px_-10px_rgba(37,211,102,.9)]">
+                            <MessageCircle className="h-7 w-7" strokeWidth={2.2} /><Phone className="absolute h-3 w-3" strokeWidth={3} fill="currentColor" />
+                          </span>
+                        ) : (
+                          <span aria-hidden className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#3B2BBF] text-white shadow-[0_10px_24px_-10px_rgba(59,43,191,.9)]"><Mail className="h-6 w-6" strokeWidth={2.2} /></span>
+                        )}
+                        <span className={`font-display text-sm font-semibold ${on ? "text-[#3B2BBF]" : "text-slate-800"}`}>{m}</span>
+                        <span className="text-xs leading-snug text-slate-500">{sub}</span>
+                        {on && <span className="absolute top-2.5 right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#3B2BBF] text-white"><Check aria-hidden className="h-3 w-3" /></span>}
+                      </label>
+                    )
+                  })}
+                </div>
+                {contactError && <p id="contact-error" role="alert" className="text-sm font-medium text-rose-700">{contactError}</p>}
+                <AnimatePresence initial={false} mode="wait">
+                  {data["contact-method"] && (
+                    <motion.div key={data["contact-method"]}
+                      initial={reduced ? false : { height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                      exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25 }} className="overflow-hidden">
+                      {data["contact-method"] === "WhatsApp" ? (
+                        <div className="grid gap-2 pt-1">
+                          <label htmlFor="whatsapp-number" className="text-sm font-medium text-slate-700">Is this your WhatsApp number? <span className="font-normal text-slate-500">Edit if needed.</span></label>
+                          <div className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)] gap-2 sm:max-w-md">
+                            <label htmlFor="whatsapp-dial" className="sr-only">Country code</label>
+                            <select id="whatsapp-dial" name="whatsapp-dial" required value={data["whatsapp-dial"] ?? "+966"} onChange={(e) => set("whatsapp-dial", e.target.value)} className={inputCls + " px-3"}>
+                              {DIAL_CODES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                            </select>
+                            <input id="whatsapp-number" name="whatsapp-number" type="tel" inputMode="tel" autoComplete="tel-national" required
+                              pattern="[0-9][0-9 ]{5,15}" title="Digits only, without the country code"
+                              placeholder="50 123 4567" value={data["whatsapp-number"] ?? ""} onChange={(e) => set("whatsapp-number", e.target.value.replace(/[^\d ]/g, ""))}
+                              className={inputCls + " tabular-nums"} />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid gap-2 pt-1 sm:max-w-md">
+                          <label htmlFor="contact-email" className="text-sm font-medium text-slate-700">We’ll email you at <span className="font-normal text-slate-500">(edit if needed)</span></label>
+                          <input id="contact-email" name="contact-email" type="email" inputMode="email" autoComplete="email" required
+                            placeholder="name@example.com" value={data["contact-email"] ?? ""} onChange={(e) => set("contact-email", e.target.value)} className={inputCls} />
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Row>
+
+              <Row label="Review" groupId="g-review" optional>
+                <dl data-testid="review-summary" className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2 rounded-2xl border border-[#3B2BBF]/15 bg-[#3B2BBF]/[.03] p-4 text-sm">
+                  {([
+                    ["Loan", [data["loan-type"], data["loan-duration"]].filter(Boolean).join(" · ")],
+                    ["Amount", amountNum ? `${formatMoney(amountNum, currency)}${currency !== "USD" ? ` (≈ ${formatMoney(toUsd(amountNum, currency), "USD")})` : ""}` : ""],
+                    ["Applicant", [data["first-name"], data["last-name"]].filter(Boolean).join(" ")],
+                    ["Preferred contact", preferredContactOf(data) || "Not chosen yet"],
+                  ] as const).map(([k, v]) => (
+                    <div key={k} className="contents"><dt className="text-slate-500">{k}</dt><dd className={`min-w-0 break-words font-semibold ${k === "Preferred contact" ? "text-[#3B2BBF]" : "text-slate-900"}`}>{v || "—"}</dd></div>
+                  ))}
+                </dl>
+              </Row>
+
               <Row label="Consent" groupId="g-consent">
                 <label htmlFor="consent" className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-slate-600">
                   <input id="consent" name="consent" type="checkbox" required checked={data.consent === "yes"} onChange={(e) => set("consent", e.target.checked ? "yes" : "")}
                     className="mt-0.5 h-5 w-5 flex-none accent-[#3B2BBF]" />
-                  <span>I confirm the details are accurate and I understand this is a <strong className="text-slate-900">demo</strong>: no real loan is offered{isLive ? ", though a summary will be sent to Avant via Telegram" : ""}.</span>
+                  <span>I confirm the details are accurate and agree that Avant Middle East may contact me about this enquiry.</span>
                 </label>
               </Row>
             </>)}
@@ -508,21 +645,22 @@ export function MortgageForm() {
 
         {error && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</p>}
 
-        <div className={`mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center ${step === 0 ? "sm:justify-center" : "sm:justify-between"}`}>
+        {step === 2 && (
+          <p data-testid="submit-notice" className="mt-8 text-center text-xs leading-relaxed text-slate-500 sm:text-[13px]">{SUBMIT_NOTICE}</p>
+        )}
+        <div className={`${step === 2 ? "mt-5" : "mt-8"} flex flex-col-reverse gap-3 sm:flex-row sm:items-center ${step === 0 ? "sm:justify-center" : "sm:justify-between"}`}>
           {step > 0 && (
             <button type="button" onClick={back} className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-7 py-3.5 font-semibold text-slate-700 hover:border-[#3B2BBF] hover:text-[#3B2BBF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">
               <ArrowLeft aria-hidden className="h-4 w-4" /> Back
             </button>
           )}
           <button type="submit" disabled={sending} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#3B2BBF] px-10 py-3.5 font-semibold text-white shadow-[0_16px_40px_-14px_rgba(59,43,191,.85)] transition-colors hover:bg-[#2f22a0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF] disabled:opacity-70">
-            {sending ? <><Loader2 aria-hidden className="h-4 w-4 animate-spin" /> Sending…</> : step < 2 ? "Next Page" : "Submit Demo Application"}
+            {sending ? <><Loader2 aria-hidden className="h-4 w-4 animate-spin" /> Sending…</> : step < 2 ? "Next Page" : "Submit Enquiry"}
           </button>
         </div>
         <p className="mt-5 flex items-center justify-center gap-2 text-center text-xs text-slate-500 sm:text-sm">
           <ShieldCheck aria-hidden className="h-4 w-4 flex-none text-[#34D399]" />
-          {isLive
-            ? "Demo form. On submit, a summary is sent to Avant via Telegram. No real loan is created."
-            : "Demo form. No data is sent, stored or shared."}
+          {"Your details are sent over an encrypted connection."}
         </p>
       </form>
     </div>

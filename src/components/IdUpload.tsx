@@ -104,8 +104,8 @@ export function IdPrivacyNote() {
     <p className="flex items-start gap-2 rounded-xl border border-[#3B2BBF]/15 bg-[#3B2BBF]/[.04] px-3 py-2.5 text-xs leading-relaxed text-slate-600">
       <Lock aria-hidden className="mt-0.5 h-3.5 w-3.5 flex-none text-[#3B2BBF]" />
       <span>
-        <strong className="text-slate-800">Privacy:</strong> your ID is sent over an encrypted connection straight to Avant's private
-        Telegram chat, only when you submit. It is not stored on this website or on our server. Remember this is a demo site, not a real lender.
+        <strong className="text-slate-800">Privacy:</strong> your ID is sent over an encrypted connection only to our team, and only when you submit.
+        It is not stored on this website.
       </span>
     </p>
   )

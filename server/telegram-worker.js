@@ -22,7 +22,7 @@
 
 const CORS = (origin, allowed) => ({
   "Access-Control-Allow-Origin": origin && origin === allowed ? origin : "null",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Max-Age": "86400",
   Vary: "Origin",
@@ -32,27 +32,27 @@ function formatTelegram(body) {
   if (typeof body.summary === "string" && body.summary.trim()) return body.summary.slice(0, 3900)
   const f = body.fields || {}
   const lines = [
-    "Avant Loans Middle East — demo application",
+    "Avant Middle East — new loan enquiry",
+    ...(f.preferredContact ? [`Preferred contact: ${f.preferredContact}`] : []),
     `Submitted: ${body.submittedAt || new Date().toISOString()}`,
     "",
     "== Loan request ==",
     `Loan type: ${f["loan-type"] || ""}`,
-    `Loan amount (USD): ${f["loan-amount"] || ""}`,
+    `Loan amount: ${f["loan-amount"] || ""}${f["loan-amount-usd"] ? ` (≈ ${f["loan-amount-usd"]})` : ""}`,
     `Loan duration: ${f["loan-duration"] || ""}`,
     "",
     "== Applicant ==",
     `Name: ${f["first-name"] || ""} ${f["last-name"] || ""}`.trim(),
     `Email: ${f.email || ""}`,
     `Birth date: ${f["birth-date"] || ""}`,
-    `Marital: ${f.marital || ""} | Dependents: ${f.dependents || ""}`,
-    `Residency: ${f.residency || ""} | Second applicant: ${f["second-applicant"] || ""}`,
+    `Marital: ${f.marital || ""}`,
     "",
     "== Address ==",
     [f.street, f["street-2"], f.city, f.region, f.postal, f.country].filter(Boolean).join(", "),
     "",
     "== Employment & income ==",
-    `${f.employment || ""} at ${f.employer || ""} (${f["job-title"] || ""})`,
-    `Years: ${f["years-employed"] || ""} | Gross annual: ${f["annual-income"] || ""}`,
+    [f.employment, f.employer && `at ${f.employer}`, f["job-title"] && `(${f["job-title"]})`, f["own-business-name"] && `business: ${f["own-business-name"]}`].filter(Boolean).join(" "),
+    [f["years-employed"] && `Years with employer: ${f["years-employed"]}`, f["years-in-business"] && `Years in business: ${f["years-in-business"]}`, `Gross annual: ${f["annual-income"] || ""}`].filter(Boolean).join(" | "),
     `Other monthly: ${f["other-income"] || "0"} | Debts: ${f["monthly-debts"] || ""} | Pay: ${f["pay-frequency"] || ""}`,
     "",
     "== Loan details ==",
@@ -113,6 +113,14 @@ export default {
     const headers = { ...CORS(origin, allowed), "Content-Type": "application/json" }
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers })
+
+    // GET /geo -> { country } from Cloudflare's own edge geolocation (no third-party IP service).
+    // Nothing is logged or stored; the response is per-visitor so it is never cached.
+    if (request.method === "GET" && new URL(request.url).pathname === "/geo") {
+      if (origin && origin !== allowed) return json({ error: "Origin not allowed" }, 403, headers)
+      const country = typeof request.cf?.country === "string" ? request.cf.country : null
+      return json({ country }, 200, { ...headers, "Cache-Control": "no-store, private" })
+    }
     if (request.method !== "POST") return json({ error: "POST only" }, 405, headers)
     if (origin && origin !== allowed) return json({ error: "Origin not allowed" }, 403, headers)
     if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return json({ error: "Telegram secrets not configured" }, 503, headers)

@@ -1,9 +1,21 @@
 import { useEffect, useRef, useState } from "react"
 import { motion, useReducedMotion } from "motion/react"
 import { APPLY_URL } from "./Header"
-import { HERO_MEDIA } from "./heroMedia"
+import { HERO_MEDIA, PHONE_QUERY } from "./heroMedia"
 
-const { mp4, webm, poster, poster640, objectPosition } = HERO_MEDIA
+const { desktop, phone } = HERO_MEDIA
+
+/** Picks the portrait cut on phones; re-evaluates on resize/rotation. */
+function useIsPhone() {
+  const [isPhone, setIsPhone] = useState(() => typeof window !== "undefined" && window.matchMedia(PHONE_QUERY).matches)
+  useEffect(() => {
+    const m = window.matchMedia(PHONE_QUERY)
+    const on = () => setIsPhone(m.matches)
+    m.addEventListener("change", on)
+    return () => m.removeEventListener("change", on)
+  }, [])
+  return isPhone
+}
 
 /** Saves data / reduced motion -> poster only. */
 function useVideoAllowed() {
@@ -21,49 +33,54 @@ export function HeroVideo() {
   const allowVideo = useVideoAllowed()
   const ref = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
+  const isPhone = useIsPhone()
+  const media = isPhone ? phone : desktop
 
   useEffect(() => {
     const v = ref.current
     if (!v) return
     v.muted = true
     v.play().catch(() => {}) // autoplay may be blocked; poster stays visible
-  }, [allowVideo])
+  }, [allowVideo, isPhone])
 
   return (
     <section aria-labelledby="hero-title" className="relative isolate flex min-h-[640px] items-end overflow-hidden bg-[#120d33] sm:min-h-[min(88svh,820px)] sm:items-center">
       {/* Poster: always present (LCP image, reduced-motion / data-saver fallback) */}
-      <img
-        src={poster}
-        srcSet={`${poster640} 640w, ${poster} 1280w`}
-        sizes="100vw"
-        alt=""
-        fetchPriority="high"
-        decoding="async"
-        className="absolute inset-0 -z-20 h-full w-full object-cover"
-        style={{ objectPosition }}
-      />
+      <picture>
+        <source media={PHONE_QUERY} srcSet={phone.poster} />
+        <img
+          src={desktop.poster}
+          srcSet={`${desktop.poster640} 640w, ${desktop.poster} 1280w`}
+          sizes="100vw"
+          alt=""
+          fetchPriority="high"
+          decoding="async"
+          className="absolute inset-0 -z-20 h-full w-full object-cover object-top sm:object-center"
+        />
+      </picture>
       {allowVideo && (
         <video
+          key={isPhone ? "phone" : "desktop"}
           ref={ref}
-          style={{ objectPosition }}
+          style={{ objectPosition: media.objectPosition }}
           className={`absolute inset-0 -z-20 h-full w-full object-cover transition-opacity duration-700 ${playing ? "opacity-100" : "opacity-0"}`}
           autoPlay
           muted
           loop
           playsInline
           preload="metadata"
-          poster={poster}
+          poster={media.poster}
           aria-hidden="true"
           tabIndex={-1}
           disablePictureInPicture
           onPlaying={() => setPlaying(true)}
         >
-          <source src={webm} type="video/webm" />
-          <source src={mp4} type="video/mp4" />
+          <source src={media.webm} type="video/webm" />
+          <source src={media.mp4} type="video/mp4" />
         </video>
       )}
       {/* Readability overlays: indigo left-to-right on desktop, bottom-up on phone, soft vignette, fade into the light page */}
-      <div aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,rgba(18,13,51,.94)_0%,rgba(26,20,70,.78)_45%,rgba(26,20,70,.25)_75%,rgba(26,20,70,.35)_100%)] sm:bg-[linear-gradient(90deg,rgba(26,20,70,.95)_0%,rgba(26,20,70,.86)_32%,rgba(26,20,70,.45)_58%,rgba(26,20,70,.1)_80%,rgba(26,20,70,.2)_100%)]" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,rgba(18,13,51,.94)_0%,rgba(26,20,70,.78)_45%,rgba(26,20,70,.25)_75%,rgba(26,20,70,.35)_100%)] sm:bg-[linear-gradient(90deg,rgba(26,20,70,.95)_0%,rgba(26,20,70,.9)_34%,rgba(26,20,70,.55)_60%,rgba(26,20,70,.1)_80%,rgba(26,20,70,.2)_100%)]" />
       <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_75%_45%,transparent_35%,rgba(10,8,30,.35)_100%)]" />
 
       <div className="relative mx-auto w-full max-w-6xl px-5 pt-28 pb-14 sm:px-8 sm:pt-32 sm:pb-24">

@@ -2,8 +2,9 @@ import { motion, useReducedMotion } from "motion/react"
 import { LightHeader } from "./components/LightHeader"
 import { HeroVideo } from "./components/HeroVideo"
 import { APPLY_URL } from "./components/Header"
-import { Logo } from "./components/Logo"
 import { Reviews } from "./components/Reviews"
+import { SiteFooter } from "./components/SiteFooter"
+import { formatMoney, formatNumber, loanRange, useCurrency } from "./lib/currency"
 import houseImg from "./assets/3d/fluent-house.webp"
 import carImg from "./assets/3d/fluent-car.webp"
 import moneyBag from "./assets/3d/fluent-money-bag.webp"
@@ -15,25 +16,36 @@ import shield from "./assets/3d/fluent-shield.webp"
 import bank from "./assets/3d/fluent-bank.webp"
 
 const loanTypes = [
-  { title: "Mortgage", desc: "Buy or refinance a home", img: houseImg, alt: "3D house icon" },
-  { title: "Auto", desc: "Finance a vehicle", img: carImg, alt: "3D car icon" },
-  { title: "Personal", desc: "Flexible everyday funds", img: moneyBag, alt: "3D money bag icon" },
-  { title: "Business", desc: "Grow your company", img: briefcase, alt: "3D briefcase icon" },
-  { title: "Education", desc: "School and training", img: gradCap, alt: "3D graduation cap icon" },
+  { title: "Mortgage", key: "Mortgage", desc: "Buy or refinance a home", img: houseImg, alt: "3D house icon" },
+  { title: "Auto", key: "Auto/Car", desc: "Finance a vehicle", img: carImg, alt: "3D car icon" },
+  { title: "Personal", key: "Personal", desc: "Flexible everyday funds", img: moneyBag, alt: "3D money bag icon" },
+  { title: "Business", key: "Business", desc: "Grow your company", img: briefcase, alt: "3D briefcase icon" },
+  { title: "Education", key: "Education", desc: "School and training", img: gradCap, alt: "3D graduation cap icon" },
 ]
 
 const benefits = [
   { title: "Fast approval", desc: "Decisions in minutes, not days.", img: moneyWings, alt: "3D money with wings icon" },
   { title: "Low rates", desc: "Competitive APR options you can compare.", img: chartUp, alt: "3D chart trending up icon" },
   { title: "Secure", desc: "Bank-grade privacy practices on every step.", img: shield, alt: "3D shield icon" },
-  { title: "Trusted", desc: "Clear terms with no surprise fees in the demo flow.", img: bank, alt: "3D bank icon" },
+  { title: "Trusted", desc: "Clear terms with no surprise fees.", img: bank, alt: "3D bank icon" },
 ]
 
 const steps = [
   { n: "01", t: "Choose a loan", d: "Pick mortgage, auto, personal, business or education." },
   { n: "02", t: "Tell us about you", d: "A short form — checking options won’t hit your credit score." },
-  { n: "03", t: "Get a decision", d: "See your options fast. This demo sends a summary to Avant via Telegram." },
+  { n: "03", t: "Get a decision", d: "Our team reviews your request and contacts you to discuss next steps." },
 ]
+
+/** "SAR 4,000 – 281,000" for a loan type, in the visitor's currency. */
+function AmountRange({ type }: { type: string }) {
+  const { code } = useCurrency()
+  const r = loanRange(type, code)
+  return (
+    <p data-testid="card-range" className="mt-3 rounded-full bg-[#3B2BBF]/[.06] px-3 py-1 text-xs font-semibold tabular-nums text-[#3B2BBF]">
+      {formatMoney(r.min, code)} – {formatNumber(r.max)}
+    </p>
+  )
+}
 
 export default function App() {
   const reduced = useReducedMotion()
@@ -55,7 +67,7 @@ export default function App() {
               Pick the loan that fits
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-center text-slate-600">
-              Five products, one short demo application. Choose a type to start.
+              Five products, one short application. Choose a type to start.
             </p>
             <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {loanTypes.map((l, i) => (
@@ -73,7 +85,8 @@ export default function App() {
                     <img src={l.img} alt={l.alt} width={256} height={256} className="h-20 w-20 object-contain drop-shadow-md transition-transform group-hover:scale-110 sm:h-24 sm:w-24" loading="lazy" />
                     <h3 className="mt-4 font-display text-lg font-bold text-slate-900">{l.title}</h3>
                     <p className="mt-1 text-sm text-slate-600">{l.desc}</p>
-                    <span className="mt-4 text-sm font-semibold text-[#3B2BBF]">Apply →</span>
+                    <AmountRange type={l.key} />
+                    <span className="mt-auto pt-4 text-sm font-semibold text-[#3B2BBF]">Apply →</span>
                   </a>
                 </motion.li>
               ))}
@@ -129,7 +142,7 @@ export default function App() {
         <section aria-label="Apply" className="px-5 pb-20 sm:px-8">
           <div className="mx-auto max-w-4xl rounded-[28px] bg-gradient-to-br from-[#4B3BDF] to-[#2A1D9E] px-6 py-10 text-center text-white shadow-[0_30px_60px_-30px_rgba(59,43,191,.8)] sm:px-12">
             <h2 className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Ready to move forward?</h2>
-            <p className="mx-auto mt-2 max-w-lg text-white/80">Try the short demo application. It takes about three minutes.</p>
+            <p className="mx-auto mt-2 max-w-lg text-white/80">The short application takes about three minutes.</p>
             <a
               href={APPLY_URL}
               className="mt-6 inline-flex rounded-full bg-white px-8 py-3.5 text-base font-semibold text-[#3B2BBF] hover:bg-[#F3F0FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
@@ -140,25 +153,7 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="border-t border-[#3B2BBF]/10 bg-white px-5 py-12 sm:px-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:justify-between">
-          <div>
-            <Logo className="h-11" onDark={false} />
-            <p className="mt-3 max-w-sm text-sm text-slate-600">Simple, fast, and transparent personal loans. A design concept.</p>
-          </div>
-          <div className="max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-relaxed text-amber-950/85">
-            <p className="font-semibold text-amber-950">Important: this is a demo website.</p>
-            <p className="mt-2">
-              Avant Loans Middle East is not a real lender and is not affiliated with any real lender. No loans are offered here.
-              The application form is for demonstration; submitting it does not create a real application.
-            </p>
-          </div>
-        </div>
-
-        <p className="mx-auto mt-8 max-w-6xl text-xs text-slate-500">
-          © 2026 Avant Loans Middle East. Demo site. Not affiliated with any real lender.
-        </p>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }
