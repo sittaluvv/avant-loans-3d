@@ -85,6 +85,13 @@ async def run(b, w, h, name):
     await has_ar(pg, "#id-front-error", name); await has_ar(pg, "#contact-error", name)
     await pg.set_input_files("#id-front", "/tmp/test_id.jpg"); await pg.set_input_files("#id-back", "/tmp/test_id.jpg")
     await pg.click("[data-testid=contact-WhatsApp]"); await pg.wait_for_timeout(400)
+    # WhatsApp code: SVG-flag combobox (mouse/tap pick), value carried by the hidden #whatsapp-dial
+    await pg.click("[data-testid=dial-combobox]"); await pg.wait_for_timeout(200)
+    flags = await pg.evaluate("[...document.querySelectorAll('[data-testid=dial-list] img')].filter(i => i.complete && i.naturalWidth > 0).length")
+    await pg.locator("[data-testid=dial-list] [role=option]:has-text('Qatar')").click(); await pg.wait_for_timeout(150)
+    picked = await pg.input_value("#whatsapp-dial")
+    await pg.click("[data-testid=dial-combobox]"); await pg.locator("[data-testid=dial-list] [role=option]:has-text('Saudi Arabia')").click(); await pg.wait_for_timeout(150)
+    check(flags == 10 and picked == "+974" and await pg.input_value("#whatsapp-dial") == "+966" and await pg.locator("select#whatsapp-dial").count() == 0, f"[{name}] /apply WhatsApp code: 10 SVG flags, tap picks +974 / +966")
     await pg.fill("#whatsapp-number", "50 123 4567"); await pg.check("#consent", force=True); await pg.wait_for_timeout(300)
     await audit(pg, f"{name} step3", 30)
     await has_ar(pg, "[data-testid=submit-notice]", name)

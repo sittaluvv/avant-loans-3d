@@ -98,7 +98,13 @@ export const loanDetailsLabel = (loanType: string) => ({
 }[loanType] || "Loan Details")
 
 /** Dialling codes for the WhatsApp number (default follows the visitor's currency). */
-export const DIAL_CODES = [["+966", "🇸🇦 +966"], ["+971", "🇦🇪 +971"], ["+974", "🇶🇦 +974"], ["+965", "🇰🇼 +965"], ["+973", "🇧🇭 +973"], ["+968", "🇴🇲 +968"], ["+1", "🇺🇸 +1"], ["+44", "🇬🇧 +44"], ["+91", "🇮🇳 +91"], ["+20", "🇪🇬 +20"]] as const
+/** WhatsApp country codes (value = code). Flags are flag-icons SVGs (see components/Flag.tsx). */
+export const DIAL_CODES = [
+  { code: "+966", name: "Saudi Arabia", iso: "sa" }, { code: "+971", name: "United Arab Emirates", iso: "ae" },
+  { code: "+974", name: "Qatar", iso: "qa" }, { code: "+965", name: "Kuwait", iso: "kw" }, { code: "+973", name: "Bahrain", iso: "bh" },
+  { code: "+968", name: "Oman", iso: "om" }, { code: "+1", name: "United States", iso: "us" }, { code: "+44", name: "United Kingdom", iso: "gb" },
+  { code: "+91", name: "India", iso: "in" }, { code: "+20", name: "Egypt", iso: "eg" },
+] as const
 export const DIAL_BY_CURRENCY: Record<string, string> = { SAR: "+966", AED: "+971", QAR: "+974", KWD: "+965", BHD: "+973", OMR: "+968", USD: "+1" }
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 export const BIRTH_MAX = "2008-10-17"

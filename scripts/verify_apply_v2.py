@@ -98,6 +98,34 @@ async def contrast(pg, sel, tag, minimum=4.5):
     check(worst >= minimum, f"[{tag}] contrast {sel[:46]} worst {worst:.2f}:1 over {len(items)} items (>= {minimum}) {worst_t}")
     return worst
 
+async def dial_checks(pg, tag, w, shot=False, view=""):
+    """WhatsApp country code: SVG-flag combobox, keyboard only (type digits, Esc, Home + Enter), flags loaded, fits viewport."""
+    cb = "[data-testid=dial-combobox]"
+    check(await pg.input_value("#whatsapp-dial") == "+966" and await pg.inner_text("[data-testid=dial-value]") == "+966", f"[{tag}] dial prefilled +966 (SAR)")
+    check(await pg.evaluate("!!document.querySelector('[data-testid=dial-combobox] img[src*=\"sa\"], [data-testid=dial-combobox] img')"), f"[{tag}] dial shows an SVG flag")
+    check(await pg.locator("select#whatsapp-dial").count() == 0, f"[{tag}] no native emoji <select> left")
+    await pg.focus(cb); await pg.keyboard.type("971", delay=40); await pg.wait_for_timeout(200)
+    act = await pg.get_attribute(cb, "aria-activedescendant"); exp = await pg.get_attribute(cb, "aria-expanded")
+    act_txt = await pg.evaluate("(id) => document.getElementById(id)?.innerText || ''", act or "")
+    n = await pg.locator("[data-testid=dial-list] [role=option]").count()
+    loaded = await pg.evaluate("[...document.querySelectorAll('[data-testid=dial-list] img')].every(i => i.complete && i.naturalWidth > 0) && document.querySelectorAll('[data-testid=dial-list] img').length")
+    lb = await pg.locator("[data-testid=dial-list]").bounding_box()
+    check(exp == "true" and act_txt.startswith("United Arab Emirates") and n == 10 and loaded == 10, f"[{tag}] dial: type '971' opens + activates UAE; 10 options, 10 SVG flags loaded")
+    check(lb["x"] >= 0 and lb["x"] + lb["width"] <= w, f"[{tag}] dial list fits the viewport ({lb['x']:.0f}-{lb['x'] + lb['width']:.0f} of {w})")
+    if shot:
+        await pg.wait_for_timeout(150)
+        top = (await pg.locator(cb).bounding_box())["y"]
+        if view == "390":
+            await pg.screenshot(path=f"{SHOTS}/phone_code_flags_390.png", clip={"x": 0, "y": max(0, top - 70), "width": w, "height": lb["height"] + (top - max(0, top - 70)) + 70})
+        else:
+            await pg.screenshot(path=f"{SHOTS}/phone_code_flags.png", clip={"x": max(0, lb["x"] - 40), "y": max(0, top - 90), "width": min(w, lb["width"] + 440), "height": lb["height"] + (top - max(0, top - 90)) + 70})
+    await pg.keyboard.press("Enter"); await pg.wait_for_timeout(150)
+    check(await pg.inner_text("[data-testid=dial-value]") == "+971" and await pg.input_value("#whatsapp-dial") == "+971" and await pg.get_attribute(cb, "aria-expanded") == "false", f"[{tag}] Enter selects +971 and closes")
+    await pg.keyboard.press("ArrowDown"); await pg.keyboard.press("Escape"); await pg.wait_for_timeout(120)
+    check(await pg.get_attribute(cb, "aria-expanded") == "false" and await pg.inner_text("[data-testid=dial-value]") == "+971", f"[{tag}] Esc closes without changing")
+    await pg.keyboard.press("ArrowDown"); await pg.keyboard.press("Home"); await pg.keyboard.press("Enter"); await pg.wait_for_timeout(150)
+    check(await pg.input_value("#whatsapp-dial") == "+966", f"[{tag}] Home + Enter -> +966 (back to the default, so payload parity holds)")
+
 async def v2_flow(b, view, key, shots=False, reduced=False):
     R = RUNS[key]; w, h = VIEWS[view]
     c, pg, errs, sent = await new_page(b, view, reduced)
@@ -205,6 +233,7 @@ async def v2_flow(b, view, key, shots=False, reduced=False):
     check(bool(ce) and not sent, f"[{tag}] no contact method -> error, nothing sent")
     await pg.click(f"[data-testid=contact-{R['contact']}]"); await pg.wait_for_timeout(350)
     if R["contact"] == "WhatsApp":
+        await dial_checks(pg, tag, w, shot=(key == "A" and view in ("390", "1440")), view=view)
         await pg.fill("#whatsapp-number", "50 123 4567"); await pg.focus("#whatsapp-number")
     else:
         check(await pg.input_value("#contact-email") == "test@example.com", f"[{tag}] email prefilled from About you"); await pg.focus("#contact-email")

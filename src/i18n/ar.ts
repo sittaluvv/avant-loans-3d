@@ -71,6 +71,8 @@ export const AR: Record<string, string> = {
   "Oman": "عُمان",
   "Jordan": "الأردن",
   "Egypt": "مصر",
+  "India": "الهند",
+  "Country code": "رمز الدولة",
   "Lebanon": "لبنان",
   "United Kingdom": "المملكة المتحدة",
   "United States": "الولايات المتحدة",

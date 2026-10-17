@@ -11,8 +11,9 @@ import eg from "flag-icons/flags/4x3/eg.svg"
 import lb from "flag-icons/flags/4x3/lb.svg"
 import gb from "flag-icons/flags/4x3/gb.svg"
 import us from "flag-icons/flags/4x3/us.svg"
+import inFlag from "flag-icons/flags/4x3/in.svg"
 
-export const FLAG_SVG: Record<string, string> = { ae, sa, qa, kw, bh, om, jo, eg, lb, gb, us }
+export const FLAG_SVG: Record<string, string> = { ae, sa, qa, kw, bh, om, jo, eg, lb, gb, us, in: inFlag }
 
 /** iso: lower-case ISO 3166-1 alpha-2, or "" for the globe ("Other"). Decorative (the text next to it names the country). */
 export function Flag({ iso, className = "h-[15px] w-5" }: { iso?: string; className?: string }) {

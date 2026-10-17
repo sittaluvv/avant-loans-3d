@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { formatMoney, formatNumber, toUsd } from "../lib/currency"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { Check, ChevronDown, ShieldCheck, ArrowLeft, Loader2, Mail, MessageCircle, Phone } from "lucide-react"
@@ -7,6 +7,7 @@ import { loanTypeById } from "../lib/loanTypes"
 import { IdUploads, IdPrivacyNote, ID_TYPES } from "./IdUpload"
 import { Ar } from "../i18n/Ar"
 import { DurationInput } from "./DurationInput"
+import { DialCodeCombobox } from "./DialCodeCombobox"
 import { CountryCombobox } from "./CountryCombobox"
 import { AR, ar as ar_ } from "../i18n/ar"
 
@@ -14,7 +15,7 @@ import { AR, ar as ar_ } from "../i18n/ar"
  * shared with /apply-v2/. */
 import {
   useApplication, preferredContactOf, loanDetailsLabel, loanImg, SUCCESS_COPY,
-  MARITAL, PURPOSES, durationText, durationReadout, PAY_FREQUENCIES, LOAN_TYPES, DIAL_CODES, EMPLOYMENT, BIRTH_MAX, BIRTH_MIN, type Data,
+  MARITAL, PURPOSES, durationText, durationReadout, PAY_FREQUENCIES, LOAN_TYPES, EMPLOYMENT, BIRTH_MAX, BIRTH_MIN, type Data,
 } from "../lib/application"
 export { preferredContactOf }
 
@@ -97,6 +98,9 @@ export function MortgageForm() {
   const formRef = useRef<HTMLFormElement>(null)
   const topRef = useRef<HTMLDivElement>(null)
   const app = useApplication()
+  const [clip, setClip] = useState(true) // contact panel: clip only while expanding, so the code list can overflow
+  const contactMethod = app.data["contact-method"]
+  useEffect(() => { setClip(true); const t = setTimeout(() => setClip(false), 320); return () => clearTimeout(t) }, [contactMethod])
   const {
     data, set, currency, error, setError, sending, done, delivered, contactError, chooseContact, empKind, setEmployment,
     idFiles, idErrors, setIdFile, todayIso, loanType, range, months, amountNum, chooseLoanType, typeLocked, setTypeLocked, loanTypeError, setAmount,
@@ -419,15 +423,13 @@ export function MortgageForm() {
                     <motion.div key={data["contact-method"]}
                       initial={reduced ? false : { height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
                       exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25 }} className="overflow-hidden">
+                      transition={{ duration: 0.25 }} onAnimationComplete={() => setClip(false)}
+                      className={clip ? "overflow-hidden" : "overflow-visible"}>
                       {data["contact-method"] === "WhatsApp" ? (
                         <div className="grid gap-2 pt-1">
                           <label htmlFor="whatsapp-number" className="text-sm font-medium text-slate-700">Is this your WhatsApp number? <span className="font-normal text-slate-500">Edit if needed.</span><Ar en="Is this your WhatsApp number? Edit if needed." /></label>
                           <div className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)] gap-2 sm:max-w-md">
-                            <label htmlFor="whatsapp-dial" className="sr-only">Country code</label>
-                            <select id="whatsapp-dial" name="whatsapp-dial" required value={data["whatsapp-dial"] ?? "+966"} onChange={(e) => set("whatsapp-dial", e.target.value)} className={inputCls + " px-3"}>
-                              {DIAL_CODES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                            </select>
+                  <DialCodeCombobox size="md" value={data["whatsapp-dial"] ?? "+966"} onChange={(v) => set("whatsapp-dial", v)} />
                             <input id="whatsapp-number" name="whatsapp-number" type="tel" inputMode="tel" autoComplete="tel-national" required
                               pattern="[0-9][0-9 ]{5,15}" title="Digits only, without the country code"
                               placeholder="50 123 4567" value={data["whatsapp-number"] ?? ""} onChange={(e) => set("whatsapp-number", e.target.value.replace(/[^\d ]/g, ""))}

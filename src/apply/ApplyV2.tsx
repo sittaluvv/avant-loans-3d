@@ -5,6 +5,7 @@ import { BASE } from "../components/Header"
 import { Logo } from "../components/Logo"
 import { CurrencySelect } from "../components/CurrencySelect"
 import { DurationInput } from "../components/DurationInput"
+import { DialCodeCombobox } from "../components/DialCodeCombobox"
 import { CountryCombobox } from "../components/CountryCombobox"
 import { ID_TYPES } from "../components/IdUpload"
 import { Ar } from "../i18n/Ar"
@@ -14,7 +15,7 @@ import { COMPANY_LINE, REGULATORY_LINE, SUBMIT_NOTICE } from "../lib/legal"
 import { loanTypeById } from "../lib/loanTypes"
 import {
   useApplication, preferredContactOf, loanDetailsLabel, loanImg, durationText, durationReadout, SUCCESS_COPY,
-  MARITAL, PAY_FREQUENCIES, LOAN_TYPES, DIAL_CODES, EMPLOYMENT, PURPOSES, BIRTH_MAX, BIRTH_MIN, type ScreenChecks,
+  MARITAL, PAY_FREQUENCIES, LOAN_TYPES, EMPLOYMENT, PURPOSES, BIRTH_MAX, BIRTH_MIN, type ScreenChecks,
 } from "../lib/application"
 import { AmountField, ChipGroup, FloatInput, GroupLabel, OptionCards, focusRing } from "./fields"
 import { IdDropzones, PrivacyNoteV2 } from "./IdDropzone"
@@ -413,6 +414,9 @@ export default function ApplyV2() {
 function ReviewScreen({ app, screens, edit, contactError, chooseContact }: {
   app: ReturnType<typeof useApplication>; screens: Screen[]; edit: (i: number) => void; contactError: string; chooseContact: (m: "WhatsApp" | "Email") => void
 }) {
+  const [clip, setClip] = useState(true) // contact panel: clip only while expanding, so the code list can overflow
+  const contactMethod = app.data["contact-method"]
+  useEffect(() => { setClip(true); const t = setTimeout(() => setClip(false), 320); return () => clearTimeout(t) }, [contactMethod])
   const { data, set, currency, amountNum, months, idFiles } = app
   const d = (k: string) => (data[k] ?? "").trim()
   const join = (...xs: string[]) => xs.filter(Boolean).join(", ")
@@ -471,16 +475,13 @@ function ReviewScreen({ app, screens, edit, contactError, chooseContact }: {
       {contactError && <p id="contact-error" role="alert" className="mt-2 text-sm font-medium text-rose-700">{contactError}<Ar en={contactError} className="!text-rose-700/80" /></p>}
       <AnimatePresence initial={false} mode="wait">
         {data["contact-method"] && (
-          <motion.div key={data["contact-method"]} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="-mx-1 overflow-hidden px-1">
+          <motion.div key={data["contact-method"]} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} onAnimationComplete={() => setClip(false)}
+            className={`-mx-1 px-1 ${clip ? "overflow-hidden" : "overflow-visible"}`}>
             {data["contact-method"] === "WhatsApp" ? (
               <div className="grid gap-2 pt-4">
                 <label htmlFor="whatsapp-number" className="text-sm font-medium text-slate-700">Is this your WhatsApp number? <span className="font-normal text-slate-500">Edit if needed.</span><Ar en="Is this your WhatsApp number? Edit if needed." /></label>
                 <div className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-2">
-                  <label htmlFor="whatsapp-dial" className="sr-only">Country code</label>
-                  <select id="whatsapp-dial" name="whatsapp-dial" required value={data["whatsapp-dial"] ?? "+966"} onChange={(e) => set("whatsapp-dial", e.target.value)}
-                    className="h-14 rounded-2xl border border-slate-200 bg-white px-3 text-[15px] focus:border-[#3B2BBF] focus:ring-4 focus:ring-[#3B2BBF]/15 focus:outline-none">
-                    {DIAL_CODES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                  </select>
+                  <DialCodeCombobox size="lg" value={data["whatsapp-dial"] ?? "+966"} onChange={(v) => set("whatsapp-dial", v)} />
                   <input id="whatsapp-number" name="whatsapp-number" type="tel" inputMode="tel" autoComplete="tel-national" required pattern="[0-9][0-9 ]{5,15}" title="Digits only, without the country code"
                     placeholder="50 123 4567" value={data["whatsapp-number"] ?? ""} onChange={(e) => set("whatsapp-number", e.target.value.replace(/[^\d ]/g, ""))}
                     className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-[15px] tabular-nums placeholder:text-slate-400 focus:border-[#3B2BBF] focus:ring-4 focus:ring-[#3B2BBF]/15 focus:outline-none aria-[invalid=true]:border-rose-400" />
