@@ -8,7 +8,8 @@ import { loanRange, formatMoney, formatNumber, useCurrency } from "../lib/curren
  * "Choose your loan type" modal (desktop) / bottom sheet (phone).
  * Native <dialog>.showModal(): background is inert (focus stays inside), Esc closes. Animations are motion-safe only.
  */
-export function LoanTypePicker() {
+/** showRanges=false hides the plain-text amount ranges (homepage v2 shows no amounts). */
+export function LoanTypePicker({ showRanges = true }: { showRanges?: boolean } = {}) {
   const ref = useRef<HTMLDialogElement>(null)
   const opener = useRef<HTMLElement | null>(null)
   const [open, setOpen] = useState(false)
@@ -37,7 +38,7 @@ export function LoanTypePicker() {
       className="loan-picker m-0 mt-auto w-full max-w-none rounded-t-[28px] border-0 bg-white p-0 text-slate-900 shadow-[0_-20px_60px_-20px_rgba(26,20,70,.45)] backdrop:bg-[#120d33]/55 backdrop:backdrop-blur-sm sm:m-auto sm:w-[min(92vw,880px)] sm:rounded-[28px] sm:shadow-[0_40px_90px_-30px_rgba(26,20,70,.6)]"
     >
       {open && <style>{"html{overflow:hidden}"}</style>}
-      <div className="max-h-[88svh] overflow-y-auto px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-h-[86vh] sm:px-8 sm:pt-7 sm:pb-8">
+      <div data-lenis-prevent className="max-h-[88svh] overflow-y-auto px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-h-[86vh] sm:px-8 sm:pt-7 sm:pb-8">
         <div aria-hidden className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200 sm:hidden" />
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -59,7 +60,7 @@ export function LoanTypePicker() {
                   <img src={t.img} alt="" width={256} height={256} className="h-14 w-14 object-contain drop-shadow-md transition-transform group-hover:scale-110 motion-reduce:transition-none sm:h-16 sm:w-16" />
                   <span className="font-display text-sm font-semibold text-slate-900">{t.label}</span>
                   <span className="text-xs leading-snug text-slate-500">{t.hint}</span>
-                  <span className="mt-1 text-[11px] font-semibold tabular-nums text-[#3B2BBF]">{formatMoney(r.min, code)} – {formatNumber(r.max)}</span>
+                  {showRanges && <span className="mt-1 text-[11px] font-semibold tabular-nums text-[#3B2BBF]">{formatMoney(r.min, code)} – {formatNumber(r.max)}</span>}
                 </a>
               </li>
             )

@@ -5,7 +5,7 @@ import { pickerLinkProps } from "./LoanTypePicker"
 import { CurrencySelect } from "./CurrencySelect"
 
 /** overlay: header floats over the dark hero video (white logo/nav) and turns light after scrolling. */
-export function LightHeader({ overlay = false }: { overlay?: boolean }) {
+export function LightHeader({ overlay = false, links }: { overlay?: boolean; links?: [string, string][] }) {
   const [scrolled, setScrolled] = useState(!overlay)
   useEffect(() => {
     if (!overlay) return
@@ -25,7 +25,7 @@ export function LightHeader({ overlay = false }: { overlay?: boolean }) {
           <Logo className="h-9 sm:h-11 lg:h-12" variant={dark ? "white" : "color"} />
         </a>
         <nav aria-label="Main" className={`hidden items-center gap-8 text-sm font-semibold md:flex ${dark ? "text-white/85" : "text-slate-600"}`}>
-          {[["#loan-types", "Loans"], ["#how", "How it works"], ["#why-us", "Why us"], [APPLY_URL, "Apply"]].map(([href, label]) => (
+          {(links ?? [["#loan-types", "Loans"], ["#how", "How it works"], ["#why-us", "Why us"], [APPLY_URL, "Apply"]]).map(([href, label]) => (
             <a key={label} {...(href === APPLY_URL ? pickerLinkProps : { href })} className={dark ? "hover:text-white" : "hover:text-[#3B2BBF]"}>{label}</a>
           ))}
         </nav>
