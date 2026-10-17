@@ -6,14 +6,14 @@ import { useSyncExternalStore } from "react"
 
 export type CurrencyCode = "SAR" | "AED" | "QAR" | "KWD" | "BHD" | "OMR" | "USD"
 
-export const CURRENCIES: { code: CurrencyCode; country: string; flag: string; perUsd: number; unit: number }[] = [
-  { code: "SAR", country: "Saudi Arabia", flag: "🇸🇦", perUsd: 3.75, unit: 1000 },
-  { code: "AED", country: "UAE", flag: "🇦🇪", perUsd: 3.6725, unit: 1000 },
-  { code: "QAR", country: "Qatar", flag: "🇶🇦", perUsd: 3.64, unit: 1000 },
-  { code: "KWD", country: "Kuwait", flag: "🇰🇼", perUsd: 0.307, unit: 100 },
-  { code: "BHD", country: "Bahrain", flag: "🇧🇭", perUsd: 0.376, unit: 100 },
-  { code: "OMR", country: "Oman", flag: "🇴🇲", perUsd: 0.3845, unit: 100 },
-  { code: "USD", country: "Other / international", flag: "🇺🇸", perUsd: 1, unit: 1000 },
+export const CURRENCIES: { code: CurrencyCode; country: string; flag: string /* ISO code for <Flag> */; perUsd: number; unit: number }[] = [
+  { code: "SAR", country: "Saudi Arabia", flag: "sa", perUsd: 3.75, unit: 1000 },
+  { code: "AED", country: "UAE", flag: "ae", perUsd: 3.6725, unit: 1000 },
+  { code: "QAR", country: "Qatar", flag: "qa", perUsd: 3.64, unit: 1000 },
+  { code: "KWD", country: "Kuwait", flag: "kw", perUsd: 0.307, unit: 100 },
+  { code: "BHD", country: "Bahrain", flag: "bh", perUsd: 0.376, unit: 100 },
+  { code: "OMR", country: "Oman", flag: "om", perUsd: 0.3845, unit: 100 },
+  { code: "USD", country: "Other / international", flag: "us", perUsd: 1, unit: 1000 },
 ]
 export const DEFAULT_CURRENCY: CurrencyCode = "USD"
 
@@ -71,13 +71,20 @@ function localeGuess(): CurrencyCode | null {
   return null
 }
 
+let geoCountry = ""
+const geoSubs = new Set<() => void>()
+/** ISO country from the Worker's /geo (IP), "" until known / unavailable. */
+export function useGeoCountry() {
+  return useSyncExternalStore((f) => { geoSubs.add(f); initCurrency(); return () => geoSubs.delete(f) }, () => geoCountry, () => geoCountry)
+}
+
 let started = false
 export function initCurrency() {
   if (started || typeof window === "undefined") return
   started = true
   let saved: string | null = null
   try { saved = localStorage.getItem(KEY) } catch { /* private mode */ }
-  if (isCode(saved)) { emit({ code: saved, source: "manual" }); return }
+  if (isCode(saved)) emit({ code: saved, source: "manual" })
   const fallback = () => { const g = localeGuess(); if (state.source !== "manual") emit(g ? { code: g, source: "locale" } : { code: DEFAULT_CURRENCY, source: "default" }) }
   const api = import.meta.env.VITE_TELEGRAM_API_URL as string | undefined
   if (!api) { fallback(); return }
@@ -85,8 +92,9 @@ export function initCurrency() {
   fetch(`${api.replace(/\/$/, "")}/geo`, { signal: ctl.signal })
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
     .then((j: { country?: string | null }) => {
-      if (state.source === "manual") return
       const cc = (j.country || "").toUpperCase()
+      if (cc) { geoCountry = cc; geoSubs.forEach((f) => f()) } // also offered to the Country field (apply forms)
+      if (state.source === "manual") return
       emit({ code: COUNTRY_CURRENCY[cc] ?? DEFAULT_CURRENCY, source: "geo" })
     })
     .catch(fallback)

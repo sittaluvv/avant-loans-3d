@@ -10,7 +10,7 @@ import { loanRange, formatMoney, formatNumber, useCurrency } from "../lib/curren
  * Native <dialog>.showModal(): background is inert (focus stays inside), Esc closes. Animations are motion-safe only.
  */
 /** showRanges=false hides the plain-text amount ranges (homepage v2 shows no amounts). */
-export function LoanTypePicker({ showRanges = true }: { showRanges?: boolean } = {}) {
+export function LoanTypePicker({ showRanges = true, applyUrl = APPLY_URL }: { showRanges?: boolean; applyUrl?: string } = {}) {
   const ref = useRef<HTMLDialogElement>(null)
   const opener = useRef<HTMLElement | null>(null)
   const [open, setOpen] = useState(false)
@@ -56,7 +56,7 @@ export function LoanTypePicker({ showRanges = true }: { showRanges?: boolean } =
             const r = loanRange(t.id, code)
             return (
               <li key={t.slug} className={i === LOAN_TYPE_LIST.length - 1 ? "col-span-2 sm:col-span-1" : ""}>
-                <a href={applyUrlFor(APPLY_URL, t.slug)} data-slug={t.slug}
+                <a href={applyUrlFor(applyUrl, t.slug)} data-slug={t.slug}
                   className="group flex h-full flex-col items-center gap-1.5 rounded-2xl border border-slate-200 bg-white p-4 text-center transition-all hover:-translate-y-0.5 hover:border-[#3B2BBF]/40 hover:shadow-[0_16px_36px_-18px_rgba(59,43,191,.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
                   <img src={t.img} alt="" width={256} height={256} className="h-14 w-14 object-contain drop-shadow-md transition-transform group-hover:scale-110 motion-reduce:transition-none sm:h-16 sm:w-16" />
                   <span className="font-display text-sm font-semibold text-slate-900">{t.label}<Ar en={t.label} className="text-center" /></span>
@@ -73,12 +73,13 @@ export function LoanTypePicker({ showRanges = true }: { showRanges?: boolean } =
 }
 
 /** Props for any generic Apply link: real href (no-JS fallback) but opens the picker. */
-export const pickerLinkProps = {
-  href: APPLY_URL,
+export const pickerLinkPropsFor = (href: string) => ({
+  href,
   "aria-haspopup": "dialog" as const,
   onClick: (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
     e.preventDefault()
     window.dispatchEvent(new Event(OPEN_PICKER_EVENT))
   },
-}
+})
+export const pickerLinkProps = pickerLinkPropsFor(APPLY_URL)

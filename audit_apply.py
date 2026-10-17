@@ -23,7 +23,7 @@ with sync_playwright() as p:
         if name=="phone": pg.screenshot(path=f"{OUT}/apply_phone_errors.png")
         f=pg.fill
         f("#first-name","Ann"); f("#last-name","Lee"); f("#street","1 Palm St"); f("#city","Dubai"); f("#region","Dubai"); f("#postal","00000")
-        pg.select_option("#country","United Arab Emirates"); f("#birth-date","1990-05-04"); f("#email","ann@example.com")
+        pg.click("[data-testid=country-combobox]"); pg.click("[role=option]:has-text('United Arab Emirates')"); f("#birth-date","1990-05-04"); f("#email","ann@example.com")
         pg.select_option("#marital","Married"); f("#dependents","2"); pg.click("text=Tenant"); pg.click("label[for=second-applicant-1]")
         pg.click("text=Next Page"); pg.wait_for_timeout(700)
         info["step2"]=pg.locator("#employer").count()==1

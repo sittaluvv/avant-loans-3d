@@ -19,3 +19,9 @@ Added 2026-10-17 for the "Why choose Avant Middle East" section (no attribution 
 | fluent-speech-balloon.webp | Home "Why us" (WhatsApp or email) | Microsoft Fluent Emoji 3D "Speech balloon" | MIT |
 | fluent-cityscape.webp | Home "Why us" (based in Dubai) | Microsoft Fluent Emoji 3D "Cityscape" | MIT |
 | fluent-locked.webp | Home "Why us" (secure ID upload) | Microsoft Fluent Emoji 3D "Locked" | MIT |
+
+Added 2026-10-17 for the /apply-v2/ preview (no attribution required):
+| fluent-office-building, hourglass, rocket, beach, magnifier .webp | apply-v2 employment status cards | Microsoft Fluent Emoji 3D (Office building, Hourglass not done, Rocket, Beach with umbrella, Magnifying glass tilted right) | MIT |
+| fluent-globe, id-card .webp (+ existing cityscape) | apply-v2 ID type cards, dropzone | Microsoft Fluent Emoji 3D (Globe showing Europe-Africa, Identification card) | MIT |
+| fluent-e-mail.webp (+ existing speech-balloon) | apply-v2 contact method cards | Microsoft Fluent Emoji 3D (E-mail) | MIT |
+| fluent-check-mark.webp, fluent-memo.webp | apply-v2 success / review | Microsoft Fluent Emoji 3D (Check mark button, Memo) | MIT |

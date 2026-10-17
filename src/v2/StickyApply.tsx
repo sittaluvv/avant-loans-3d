@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react"
 import { ArrowRight } from "lucide-react"
 import { BiLabel } from "../i18n/Ar"
-import { pickerLinkProps } from "../components/LoanTypePicker"
+import { pickerLinkPropsFor } from "../components/LoanTypePicker"
+import { APPLY_V2_URL } from "../components/Header"
+const pickerLinkProps = pickerLinkPropsFor(APPLY_V2_URL)
 
 /** Phone-only bottom bar that appears once the hero CTA has scrolled away (hidden again near the final CTA). */
 export function StickyApply({ heroCta, finalCta }: { heroCta: React.RefObject<HTMLElement | null>; finalCta: React.RefObject<HTMLElement | null> }) {

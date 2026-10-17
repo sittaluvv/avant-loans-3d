@@ -57,7 +57,7 @@ async def run(b, w, h, name):
     await pg.click("label[for=loan-type-1]"); await pg.wait_for_timeout(300)
     for k, v in {"first-name": "Test", "last-name": "Applicant", "street": "1 King Fahd Rd", "city": "Riyadh", "region": "Riyadh", "postal": "12345", "birth-date": "1990-01-01", "email": "test@example.com"}.items():
         await pg.fill(f"#{k}", v)
-    await pg.select_option("#country", "Saudi Arabia"); await pg.select_option("#marital", "Married")
+    await pg.click("[data-testid=country-combobox]"); await pg.click("[role=option]:has-text('Saudi Arabia')"); await pg.select_option("#marital", "Married")
     check(await pg.input_value("#marital") == "Married", f"[{name}] select values stay English")
     await pg.evaluate("window.scrollTo(0,0)"); await pg.wait_for_timeout(300)
     if name == "1440":

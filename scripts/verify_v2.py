@@ -92,11 +92,11 @@ async def main():
         # currency auto-detect still works (AE mocked)
         cur = await pg.inner_text("[data-testid=currency-button]")
         check("AED" in cur, f"currency auto-detect AED ({cur.strip()})")
-        # loan cards + chips route to /apply/?type=
+        # loan cards + chips route to the /apply-v2/ preview (?type=)
         for slug in ["personal", "auto", "mortgage", "business", "education"]:
             href = await pg.get_attribute(f"[data-testid=card-{slug}]", "href")
             chref = await pg.get_attribute(f"[data-testid=chip-{slug}]", "href")
-            check(href.endswith(f"/apply/?type={slug}") and chref == href, f"card+chip {slug} -> {href}")
+            check(href.endswith(f"/apply-v2/?type={slug}") and chref == href, f"card+chip {slug} -> {href}")
         # hero Apply opens modal; modal choice goes to apply
         await pg.click("[data-testid=hero-apply]"); await pg.wait_for_timeout(500)
         check(await pg.evaluate("!!document.querySelector('dialog[open]')"), "hero Apply opens loan-type modal")
@@ -116,10 +116,10 @@ async def main():
         await pg.click("header >> text=FAQ"); await pg.wait_for_timeout(1500)
         top = await pg.evaluate("document.getElementById('faq').getBoundingClientRect().top")
         check(-10 < top < 200, f"nav FAQ scrolls to section (top={top:.0f})")
-        # follow a card to /apply and confirm preselection
+        # follow a card to /apply-v2/ and confirm preselection
         await pg.goto(URL, wait_until="networkidle")
         await pg.click("[data-testid=card-auto]"); await pg.wait_for_load_state("networkidle")
-        check("/apply/?type=auto" in pg.url, f"card navigates to apply ({pg.url})")
+        check("/apply-v2/?type=auto" in pg.url, f"card navigates to apply-v2 ({pg.url})")
         body = await pg.inner_text("body")
         check("Auto Loan" in body and "Change" in body, "apply preselected Auto Loan chip")
         check(not errs, f"[functional] no console errors {errs[:3]}")

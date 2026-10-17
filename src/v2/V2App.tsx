@@ -3,10 +3,10 @@ import { motion, useReducedMotion } from "motion/react"
 import Lenis from "lenis"
 import { ArrowRight, BadgeCheck, ClipboardList, MessageCircle, ShieldCheck } from "lucide-react"
 import { LightHeader } from "../components/LightHeader"
-import { LoanTypePicker, pickerLinkProps } from "../components/LoanTypePicker"
+import { LoanTypePicker, pickerLinkPropsFor } from "../components/LoanTypePicker"
 import { SiteFooter } from "../components/SiteFooter"
 import { WhyUs } from "../components/WhyUs"
-import { APPLY_URL } from "../components/Header"
+import { APPLY_V2_URL } from "../components/Header"
 import { LOAN_TYPE_LIST, applyUrlFor } from "../lib/loanTypes"
 import { COMPANY_LINE } from "../lib/legal"
 import { BiLabel } from "../i18n/Ar"
@@ -15,6 +15,7 @@ import { Faq } from "./Faq"
 import { ContactOptions } from "./ContactOptions"
 import { StickyApply } from "./StickyApply"
 
+const pickerLinkProps = pickerLinkPropsFor(APPLY_V2_URL)
 const NAV: [string, string][] = [["#loan-types", "Loans"], ["#how", "How it works"], ["#why-us", "Why us"], ["#faq", "FAQ"]]
 
 const STEPS = [
@@ -61,8 +62,8 @@ export default function V2App() {
   return (
     <div className="min-h-svh overflow-x-clip bg-white text-slate-900 antialiased">
       <a href="#loan-types" className="sr-only z-[60] rounded-full bg-[#3B2BBF] px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-4 focus:left-4">Skip to loan types</a>
-      <LightHeader links={NAV} />
-      <LoanTypePicker showRanges={false} />
+      <LightHeader links={NAV} applyUrl={APPLY_V2_URL} />
+      <LoanTypePicker showRanges={false} applyUrl={APPLY_V2_URL} />
 
       <main>
         {/* HERO */}
@@ -99,7 +100,7 @@ export default function V2App() {
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {LOAN_TYPE_LIST.map((t) => (
                     <li key={t.slug}>
-                      <a href={applyUrlFor(APPLY_URL, t.slug)} data-testid={`chip-${t.slug}`}
+                      <a href={applyUrlFor(APPLY_V2_URL, t.slug)} data-testid={`chip-${t.slug}`}
                         className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1.5 pr-3.5 pl-1.5 text-sm font-semibold text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,.05)] transition-all hover:-translate-y-0.5 hover:border-[#3B2BBF]/40 hover:text-[#3B2BBF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF] motion-reduce:hover:translate-y-0">
                         <img src={t.img} alt="" width={256} height={256} className="h-7 w-7 object-contain" />
                         {t.label}
@@ -128,7 +129,7 @@ export default function V2App() {
             <ul className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
               {LOAN_TYPE_LIST.map((t, i) => (
                 <motion.li key={t.slug} {...rise(reduced, i * 0.05)} className={i === LOAN_TYPE_LIST.length - 1 ? "col-span-2 md:col-span-1" : ""}>
-                  <a href={applyUrlFor(APPLY_URL, t.slug)} data-testid={`card-${t.slug}`}
+                  <a href={applyUrlFor(APPLY_V2_URL, t.slug)} data-testid={`card-${t.slug}`}
                     className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-[#3B2BBF]/10 bg-gradient-to-b from-white to-[#F7F5FF] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#3B2BBF]/30 hover:shadow-[0_28px_60px_-34px_rgba(59,43,191,.75)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF] motion-reduce:hover:translate-y-0 sm:p-6">
                     <span aria-hidden className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[#2F6BFF]/10 blur-2xl transition-opacity group-hover:opacity-100 sm:opacity-60" />
                     <img src={t.img} alt="" width={256} height={256} loading="lazy" className="relative h-16 w-16 object-contain drop-shadow-[0_12px_14px_rgba(59,43,191,.25)] transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 sm:h-20 sm:w-20" />

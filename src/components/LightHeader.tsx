@@ -2,11 +2,12 @@ import { useEffect, useState } from "react"
 import { APPLY_URL, BASE } from "./Header"
 import { Logo } from "./Logo"
 import { BiLabel } from "../i18n/Ar"
-import { pickerLinkProps } from "./LoanTypePicker"
+import { pickerLinkPropsFor } from "./LoanTypePicker"
 import { CurrencySelect } from "./CurrencySelect"
 
 /** overlay: header floats over the dark hero video (white logo/nav) and turns light after scrolling. */
-export function LightHeader({ overlay = false, links }: { overlay?: boolean; links?: [string, string][] }) {
+export function LightHeader({ overlay = false, links, applyUrl = APPLY_URL }: { overlay?: boolean; links?: [string, string][]; applyUrl?: string }) {
+  const pickerLinkProps = pickerLinkPropsFor(applyUrl)
   const [scrolled, setScrolled] = useState(!overlay)
   useEffect(() => {
     if (!overlay) return

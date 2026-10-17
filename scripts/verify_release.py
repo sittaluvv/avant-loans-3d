@@ -6,6 +6,9 @@ from PIL import Image
 BASE = os.environ.get("BASE", "http://localhost:4173/avant-loans-3d/")
 SHOTS = "/workspace/avant-3d-shots"
 VIEWS = {"desktop": {"width": 1440, "height": 900}, "phone": {"width": 390, "height": 844}}
+# hero-only extra widths (contrast of the white copy over the bright advisor photo at every breakpoint)
+HERO_EXTRA = {"wide": {"width": 1920, "height": 1080}, "laptop": {"width": 1280, "height": 800}, "tablet": {"width": 1024, "height": 768}, "small-tablet": {"width": 768, "height": 1024}}
+VIEWS_ALL = {**VIEWS, **HERO_EXTRA}
 R = {}
 
 def lum(p):
@@ -14,7 +17,7 @@ def lum(p):
     return 0.2126 * c(p[0]) + 0.7152 * c(p[1]) + 0.0722 * c(p[2])
 
 async def ctx(b, view, country="US", mobile=False):
-    c = await b.new_context(viewport=VIEWS[view], device_scale_factor=2 if view == "phone" else 1, is_mobile=view == "phone", has_touch=view == "phone")
+    c = await b.new_context(viewport=VIEWS_ALL[view], device_scale_factor=2 if view == "phone" else 1, is_mobile=view == "phone", has_touch=view == "phone")
     async def geo(route):
         await route.fulfill(status=200, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"}, body=json.dumps({"country": country}))
     await c.route("**/geo", geo)
@@ -42,14 +45,19 @@ async def hero(b, view):
         await pg.evaluate(f"(() => {{ const i = document.querySelector('[data-testid=hero-photo]'); i.style.animation = 'none'; i.style.transform = 'scale({scale})' }})()")
         await pg.wait_for_timeout(250)
         boxes = await pg.evaluate("""(() => { const sec = document.querySelector('section[aria-labelledby=hero-title]');
-          const els = { h1: sec.querySelector('h1'), h1_accent: sec.querySelector('h1 span'), sub: sec.querySelector('h1 + p'), link: sec.querySelector('a[href="#loan-types"]') };
+          const els = { h1: sec.querySelector('h1'), h1_accent: sec.querySelector('h1 span'), sub: sec.querySelector('h1 + p'), link: sec.querySelector('a[href="#loan-types"]'), nav: [...document.querySelectorAll('header a')].find(a => a.textContent.trim() === 'Loans' && a.offsetParent) };
           const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d');
           const rgba = c => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255] };
-          const out = {}; for (const [k, e] of Object.entries(els)) { const r = e.getBoundingClientRect(); out[k] = [r.x, r.y, r.width, r.height, rgba(getComputedStyle(e).color)] }
-          sec.querySelector('.max-w-xl').style.visibility = 'hidden'; return out })()""")
-        img = Image.open(io.BytesIO(await pg.screenshot())).convert("RGB"); sc = img.width / VIEWS[view]["width"]
-        await pg.evaluate("document.querySelector('section[aria-labelledby=hero-title] .max-w-xl').style.visibility = ''")
-        for k, (x, y, w, h, col) in boxes.items():
+          // sample the painted text LINES (Range rects of each text node), not the whole block box
+          const out = {}; for (const [k, e] of Object.entries(els)) { if (!e) continue; const col = rgba(getComputedStyle(e).color); const rs = [];
+            const w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { if (k === 'h1' && n.parentElement !== e) continue; if (!n.textContent.trim()) continue;
+              const rg = document.createRange(); rg.selectNodeContents(n); for (const r of rg.getClientRects()) if (r.width > 2) rs.push([r.x, r.y, r.width, r.height]) }
+            out[k] = [rs, col] }
+          sec.querySelector('.max-w-xl').style.visibility = 'hidden'; if (els.nav) els.nav.closest('nav, header').style.color = 'transparent'; document.querySelectorAll('header a, header button').forEach(x => x.style.color = 'transparent'); return out })()""")
+        img = Image.open(io.BytesIO(await pg.screenshot())).convert("RGB"); sc = img.width / VIEWS_ALL[view]["width"]
+        await pg.evaluate("document.querySelector('section[aria-labelledby=hero-title] .max-w-xl').style.visibility = ''; document.querySelectorAll('header, header nav, header a, header button').forEach(x => x.style.color = '')")
+        for k, (rects, col) in boxes.items():
+          for (x, y, w, h) in rects:
             crop = img.crop((int(x * sc), int(y * sc), int((x + w) * sc), int((y + h) * sc)))
             px = sorted(list(crop.tobytes()[i:i+3] for i in range(0, crop.width*crop.height*3, 3)), key=lum); bg = px[int(len(px) * 0.98)]  # 98th percentile brightest pixel
             a = col[3]  # canvas-normalised [r, g, b, alpha]
@@ -57,7 +65,13 @@ async def hero(b, view):
             cr = (lum(fg) + 0.05) / (lum(bg) + 0.05)
             if k not in worst or cr < worst[k][0]: worst[k] = (round(cr, 2), scale)
     await pg.evaluate("(() => { const i = document.querySelector('[data-testid=hero-photo]'); i.style.animation = ''; i.style.transform = '' })()"); await pg.wait_for_timeout(300)
-    await pg.screenshot(path=f"{SHOTS}/hero_photo_{view}.png")
+    info["photo_v2"] = info["src"].startswith("hero-photo-v2-")
+    info["reduced_motion_off"] = await pg.evaluate("[...document.styleSheets].some(s => { try { return [...s.cssRules].some(r => r.media && /reduce/.test(r.media.mediaText) && /hero-kenburns/.test(r.cssText)) } catch { return false } })")
+    if view not in VIEWS:
+        await pg.screenshot(path=f"{SHOTS}/hero_advisor_{view}.png")
+        R[f"hero_{view}"] = {**info, "contrast_worst(ratio,scale)": worst, "overflow": await overflow(pg), "errors": errs}
+        await c.close(); return
+    await pg.screenshot(path=f"{SHOTS}/hero_photo_{view}.png"); await pg.screenshot(path=f"{SHOTS}/hero_advisor_{view}.png")
     foot = pg.locator("[data-testid=site-footer]"); await foot.scroll_into_view_if_needed(); await pg.wait_for_timeout(300)
     if view == "desktop": await foot.screenshot(path=f"{SHOTS}/footer_license.png")
     footer_text = await foot.inner_text()
@@ -95,7 +109,7 @@ async def fill_step0(pg):
     await pg.click("label[for=loan-type-1]")
     for k, v in {"first-name": "Test", "last-name": "Applicant", "street": "1 Demo St", "city": "Riyadh", "region": "Riyadh", "postal": "12345", "birth-date": "1990-01-01", "email": "test@example.com"}.items():
         await pg.fill(f"#{k}", v)
-    await pg.select_option("#country", index=1); await pg.select_option("#marital", "Single")
+    await pg.click("[data-testid=country-combobox]"); await pg.click("[role=option]:has-text('Saudi Arabia')"); await pg.select_option("#marital", "Single")
 
 async def apply_flow(b, view):
     c = await ctx(b, view, "SA"); pg = await c.new_page(); errs = []; watch(pg, errs); sent = []
@@ -191,6 +205,11 @@ async def main():
         for v in VIEWS:
             await hero(b, v)
             if os.environ.get("ONLY") != "hero": await currency(b, v); await apply_flow(b, v)
+        for v in HERO_EXTRA: await hero(b, v)
         await b.close()
     print(json.dumps(R, indent=1, ensure_ascii=False))
+    bad = [(k, n, cr) for k, r in R.items() if k.startswith("hero_") for n, (cr, _) in r["contrast_worst(ratio,scale)"].items() if cr < 4.5]
+    bad += [(k, "photo_v2", False) for k, r in R.items() if k.startswith("hero_") and not r["photo_v2"]]
+    bad += [(k, "overflow/errors", r["overflow"], r["errors"][:2]) for k, r in R.items() if k.startswith("hero_") and (r["overflow"] > 0 or r["errors"])]
+    print("HERO", "ALL PASS" if not bad else f"FAIL {bad}")
 asyncio.run(main())

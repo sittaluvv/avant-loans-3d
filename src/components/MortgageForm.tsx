@@ -1,61 +1,23 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
-import { currencyInfo, formatMoney, formatNumber, loanRange, toUsd, useCurrency } from "../lib/currency"
+import { useMemo, useRef, useState, type ReactNode } from "react"
+import { formatMoney, formatNumber, toUsd } from "../lib/currency"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { Check, ChevronDown, ShieldCheck, ArrowLeft, Loader2, Mail, MessageCircle, Phone } from "lucide-react"
-import houseImg from "../assets/3d/fluent-house.webp"
-import carImg from "../assets/3d/fluent-car.webp"
-import moneyBagImg from "../assets/3d/fluent-money-bag.webp"
-import briefcaseImg from "../assets/3d/fluent-briefcase.webp"
-import gradCapImg from "../assets/3d/fluent-grad-cap.webp"
-import { submitApplication, isLive } from "../lib/submit"
 import { SUBMIT_NOTICE } from "../lib/legal"
-import { loanTypeById, loanTypeBySlug } from "../lib/loanTypes"
-import { IdUploads, IdPrivacyNote, ID_TYPES, checkIdFile, type IdFiles, type IdSide } from "./IdUpload"
+import { loanTypeById } from "../lib/loanTypes"
+import { IdUploads, IdPrivacyNote, ID_TYPES } from "./IdUpload"
 import { Ar } from "../i18n/Ar"
+import { DurationInput } from "./DurationInput"
+import { CountryCombobox } from "./CountryCombobox"
 import { AR, ar as ar_ } from "../i18n/ar"
 
-/*
- * Answers stay in memory until submit.
- * When VITE_TELEGRAM_API_URL is set, submit POSTs a summary to the Worker
- * (which holds Telegram secrets). No bot token in the client.
- */
+/* Presentation for /apply/. All business logic (fields, rules, validation, snapshot, submit) is in lib/application.ts,
+ * shared with /apply-v2/. */
+import {
+  useApplication, preferredContactOf, loanDetailsLabel, loanImg, SUCCESS_COPY,
+  MARITAL, PURPOSES, durationText, durationReadout, PAY_FREQUENCIES, LOAN_TYPES, DIAL_CODES, EMPLOYMENT, BIRTH_MAX, BIRTH_MIN, type Data,
+} from "../lib/application"
+export { preferredContactOf }
 
-const COUNTRIES = ["United Arab Emirates", "Saudi Arabia", "Qatar", "Kuwait", "Bahrain", "Oman", "Jordan", "Egypt", "Lebanon", "United Kingdom", "United States", "Other"]
-
-const LOAN_TYPES = [
-  { id: "Mortgage", img: houseImg, hint: "Buy or refinance a home" },
-  { id: "Personal", img: moneyBagImg, hint: "Flexible use of funds" },
-  { id: "Auto/Car", img: carImg, hint: "Finance a vehicle" },
-  { id: "Business", img: briefcaseImg, hint: "Grow or start a company" },
-  { id: "Education", img: gradCapImg, hint: "School or training costs" },
-] as const
-
-const DURATIONS: Record<string, string[]> = {
-  Mortgage: ["10 years", "15 years", "20 years", "25 years", "30 years"],
-  Personal: ["12 months", "24 months", "36 months", "48 months", "60 months"],
-  "Auto/Car": ["24 months", "36 months", "48 months", "60 months", "72 months"],
-  Business: ["12 months", "24 months", "36 months", "48 months", "60 months"],
-  Education: ["12 months", "24 months", "36 months", "48 months", "60 months"],
-}
-
-type Data = Record<string, string>
-
-/** Dialling codes for the WhatsApp number (default follows the visitor's currency). */
-const DIAL_CODES = [["+966", "🇸🇦 +966"], ["+971", "🇦🇪 +971"], ["+974", "🇶🇦 +974"], ["+965", "🇰🇼 +965"], ["+973", "🇧🇭 +973"], ["+968", "🇴🇲 +968"], ["+1", "🇺🇸 +1"], ["+44", "🇬🇧 +44"], ["+91", "🇮🇳 +91"], ["+20", "🇪🇬 +20"]] as const
-const DIAL_BY_CURRENCY: Record<string, string> = { SAR: "+966", AED: "+971", QAR: "+974", KWD: "+965", BHD: "+973", OMR: "+968", USD: "+1" }
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
-/** "WhatsApp (+966 50 123 4567)" / "Email (name@example.com)" — shown in the review card and at the top of the Telegram message. */
-export function preferredContactOf(d: Data) {
-  if (d["contact-method"] === "WhatsApp") return `WhatsApp (${d["whatsapp-dial"] || ""} ${(d["whatsapp-number"] || "").trim()})`
-  if (d["contact-method"] === "Email") return `Email (${(d["contact-email"] || "").trim()})`
-  return ""
-}
-
-const EMPLOYMENT = ["Employed full-time", "Employed part-time", "Self-employed", "Retired", "Not currently employed"]
-/** Which work fields each employment status needs; everything else is cleared so it is never submitted. */
-const EMP_FIELDS = { employed: ["employer", "job-title", "years-employed"], self: ["own-business-name", "years-in-business"], none: [] as string[] }
-const empKindOf = (v?: string): keyof typeof EMP_FIELDS =>
-  v === "Self-employed" ? "self" : v === "Employed full-time" || v === "Employed part-time" ? "employed" : "none"
 const fmt = new Intl.NumberFormat("en-US")
 
 const inputCls =
@@ -129,176 +91,22 @@ function Radios({ name, options, data, set, labelledBy, cols = 1 }: { name: stri
   )
 }
 
-function money(v?: string) {
-  const n = Number(String(v ?? "").replace(/[^\d.]/g, ""))
-  return Number.isFinite(n) ? n : 0
-}
-
 export function MortgageForm() {
   const reduced = useReducedMotion()
   const [step, setStep] = useState(0)
-  const [data, setData] = useState<Data>({})
-  const [done, setDone] = useState(false)
-  const [delivered, setDelivered] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState("")
   const formRef = useRef<HTMLFormElement>(null)
   const topRef = useRef<HTMLDivElement>(null)
-  const set = (k: string, v: string) => {
-    document.getElementById(k)?.removeAttribute("aria-invalid") // clear the red state as soon as the field is edited
-    setError("")
-    setData((d) => ({ ...d, [k]: v }))
-  }
-  const { code: currency } = useCurrency()
-  const [contactError, setContactError] = useState("")
-  const chooseContact = (m: "WhatsApp" | "Email") => {
-    setContactError("")
-    setData((d) => ({
-      ...d,
-      "contact-method": m,
-      ...(m === "WhatsApp"
-        ? { "whatsapp-dial": d["whatsapp-dial"] || DIAL_BY_CURRENCY[currency] || "+966", "whatsapp-number": d["whatsapp-number"] ?? (d.mobile || "").replace(/^\+\d{1,3}\s*/, "") }
-        : { "contact-email": d["contact-email"] ?? d.email ?? "" }),
-    }))
-  }
-  const empKind = empKindOf(data.employment)
-  const setEmployment = (v: string) => setData((d) => {
-    const keep = new Set(EMP_FIELDS[empKindOf(v)])
-    const next: Data = { ...d, employment: v }
-    for (const k of [...EMP_FIELDS.employed, ...EMP_FIELDS.self]) if (!keep.has(k)) delete next[k]
-    return next
-  })
-  const [idFiles, setIdFiles] = useState<IdFiles>({})
-  const [idErrors, setIdErrors] = useState<Partial<Record<IdSide, string>>>({})
-  const setIdFile = (side: IdSide, f?: File) => {
-    if (f) {
-      const err = checkIdFile(f)
-      if (err) { setIdErrors((e) => ({ ...e, [side]: err })); return }
-    }
-    setIdErrors((e) => ({ ...e, [side]: undefined }))
-    setIdFiles((cur) => ({ ...cur, [side]: f }))
-  }
-  const todayIso = new Date().toISOString().slice(0, 10)
-
-  const loanType = data["loan-type"] || ""
-  const range = loanRange(loanType || "Personal", currency)
-  const durations = DURATIONS[loanType] || DURATIONS.Personal
-  const amountNum = money(data["loan-amount"])
-
-  const pickLoanType = (id: string) => {
-    for (const k of ["loan-duration", "loan-amount"]) document.getElementById(k)?.removeAttribute("aria-invalid") // auto-filled below
-    const r = loanRange(id, currency)
-    const durs = DURATIONS[id]
-    setData((prev) => ({
-      ...prev,
-      "loan-type": id,
-      "loan-amount": prev["loan-amount"] && money(prev["loan-amount"]) >= r.min && money(prev["loan-amount"]) <= r.max
-        ? prev["loan-amount"]
-        : String(r.default),
-      "loan-duration": durs.includes(prev["loan-duration"] || "") ? prev["loan-duration"] : durs[Math.min(2, durs.length - 1)],
-    }))
-  }
-
-  // ?type=<slug> from the homepage: preselect and collapse the loan-type selector to a chip ("Personal Loan · Change").
-  const [typeLocked, setTypeLocked] = useState(false)
-  const [loanTypeError, setLoanTypeError] = useState("")
-  const cameWithType = useRef(false)
-  useEffect(() => {
-    const t = loanTypeBySlug(new URLSearchParams(window.location.search).get("type"))
-    if (t) { cameWithType.current = true; pickLoanType(t.id); setTypeLocked(true) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  const chooseLoanType = (id: string) => {
-    pickLoanType(id); setLoanTypeError("")
-    const slug = loanTypeById(id)?.slug
-    if (slug) { const u = new URL(window.location.href); u.searchParams.set("type", slug); window.history.replaceState(null, "", u) }
-    if (cameWithType.current) setTypeLocked(true)
-  }
-
-  // Currency switched: convert the entered amount via USD, snap to the new step, clamp to the new limits.
-  const prevCurrency = useRef(currency)
-  useEffect(() => {
-    const from = prevCurrency.current
-    prevCurrency.current = currency
-    if (from === currency) return
-    setData((prev) => {
-      const n = money(prev["loan-amount"])
-      if (!n || !prev["loan-type"]) return prev
-      const r = loanRange(prev["loan-type"], currency)
-      const usd = toUsd(n, from)
-      const conv = usd * currencyInfo(currency).perUsd
-      const target = n === loanRange(prev["loan-type"], from).default
-        ? r.default // untouched default -> the new currency's clean default
-        : Math.min(r.max, Math.max(r.min, Math.round(conv / r.step) * r.step))
-      return { ...prev, "loan-amount": String(target) }
-    })
-  }, [currency])
-
-  const setAmount = (raw: string) => {
-    const digits = raw.replace(/[^\d]/g, "")
-    if (!digits) { set("loan-amount", ""); return }
-    const n = Math.min(range.max, Math.max(0, Number(digits)))
-    set("loan-amount", String(n))
-  }
-
-  const validate = () => {
-    const f = formRef.current!
-    const els = [...f.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select")]
-    els.forEach((el) => el.removeAttribute("aria-invalid"))
-    const bad = els.filter((el) => !el.checkValidity())
-    if (step === 0) setLoanTypeError(data["loan-type"] ? "" : "Choose a loan type to continue.")
-    // amount range check
-    if (data["loan-type"] && (amountNum < range.min || amountNum > range.max)) {
-      const el = f.querySelector<HTMLInputElement>("#loan-amount")
-      if (el) { el.setAttribute("aria-invalid", "true"); bad.push(el) }
-    }
-    // ID documents (final step): front always, back unless passport
-    if (step === 2) {
-      const errs: Partial<Record<IdSide, string>> = {}
-      if (!idFiles.front) errs.front = data["id-type"] === "Passport" ? "Please upload your passport photo page." : "Please upload the front of your ID."
-      if (!idFiles.back && data["id-type"] && data["id-type"] !== "Passport") errs.back = "Please upload the back of your ID."
-      setIdErrors(errs)
-      for (const side of ["front", "back"] as IdSide[]) {
-        const el = f.querySelector<HTMLInputElement>(`#id-${side}`)
-        if (errs[side] && el) { el.setAttribute("aria-invalid", "true"); bad.push(el) }
-      }
-    }
-    if (step === 2) {
-      if (!data["contact-method"]) {
-        setContactError("Please choose how we should contact you: WhatsApp or Email.")
-        const el = f.querySelector<HTMLInputElement>("#contact-method-0"); if (el) bad.push(el)
-      } else setContactError("")
-      if (data["contact-method"] === "Email") {
-        const el = f.querySelector<HTMLInputElement>("#contact-email")
-        if (el && !EMAIL_RE.test(el.value.trim()) && !bad.includes(el)) bad.push(el)
-      }
-    }
-    bad.forEach((el) => el.setAttribute("aria-invalid", "true"))
-    const count = new Set(bad.map((el) => el.name || el.id)).size
-    if (bad.length) {
-      setError(`Please complete ${count === 1 ? "the highlighted field" : `the ${count} highlighted fields`} to continue.`)
-      const first = bad[0] as HTMLInputElement
-      if (first.type === "file") first.closest("[data-id-section]")?.scrollIntoView({ block: "center" })
-      else { first.focus(); first.reportValidity?.() }
-      return false
-    }
-    setError("")
-    return true
-  }
+  const app = useApplication()
+  const {
+    data, set, currency, error, setError, sending, done, delivered, contactError, chooseContact, empKind, setEmployment,
+    idFiles, idErrors, setIdFile, todayIso, loanType, range, months, amountNum, chooseLoanType, typeLocked, setTypeLocked, loanTypeError, setAmount,
+  } = app
+  const validate = () => app.validate(formRef.current!, { loanType: step === 0, id: step === 2, contact: step === 2 })
   const scrollTop = () => topRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" })
   const next = () => { if (validate()) { setStep((s) => s + 1); scrollTop() } }
   const back = () => { setError(""); setStep((s) => s - 1); scrollTop() }
 
-  const stepLabels = useMemo(() => {
-    const third = {
-      Mortgage: "Mortgage Details",
-      Personal: "Loan Details",
-      "Auto/Car": "Auto Loan Details",
-      Business: "Business Loan Details",
-      Education: "Education Loan Details",
-    }[loanType] || "Loan Details"
-    return ["Personal Details", "Employment & Income", third] as const
-  }, [loanType])
+  const stepLabels = useMemo(() => ["Personal Details", "Employment & Income", loanDetailsLabel(loanType)] as const, [loanType])
 
   if (done) {
     return (
@@ -306,18 +114,14 @@ export function MortgageForm() {
         className="glass-light scroll-mt-28 rounded-[28px] p-8 text-center sm:p-12">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#34D399] text-white shadow-[0_12px_32px_-8px_rgba(52,211,153,.8)]"><Check aria-hidden className="h-8 w-8" /></div>
         <h2 className="mt-6 font-display text-2xl font-extrabold text-slate-900 sm:text-3xl">
-          {delivered ? "Thank you. Your enquiry was received." : "Nothing was sent."}
-          <Ar en={delivered ? "Thank you. Your enquiry was received." : "Nothing was sent."} className="mt-1 text-center text-[0.62em] font-medium" />
+          {SUCCESS_COPY.title(delivered)}
+          <Ar en={SUCCESS_COPY.title(delivered)} className="mt-1 text-center text-[0.62em] font-medium" />
         </h2>
         <p className="mx-auto mt-4 max-w-lg leading-relaxed text-slate-600">
-          {delivered
-            ? "Our team will contact you using your preferred contact method to discuss your request. Submitting is not a loan offer or approval."
-            : "Submission is not connected on this build, so your answers were not sent, saved or shared, and they have been cleared from this page."}
-          <Ar en={delivered
-            ? "Our team will contact you using your preferred contact method to discuss your request. Submitting is not a loan offer or approval."
-            : "Submission is not connected on this build, so your answers were not sent, saved or shared, and they have been cleared from this page."} className="mt-2 text-center" />
+          {SUCCESS_COPY.body(delivered)}
+          <Ar en={SUCCESS_COPY.body(delivered)} className="mt-2 text-center" />
         </p>
-        <button type="button" onClick={() => { setDone(false); setDelivered(false); setStep(0) }}
+        <button type="button" onClick={() => { app.restart(); setStep(0) }}
           className="mt-8 rounded-full border border-[#3B2BBF]/30 px-6 py-3 text-sm font-semibold text-[#3B2BBF] hover:bg-[#3B2BBF]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">Start a new enquiry<Ar en="Start a new enquiry" className="text-center" /></button>
       </motion.div>
     )
@@ -354,24 +158,7 @@ export function MortgageForm() {
         e.preventDefault()
         if (step < 2) { next(); return }
         if (!validate() || sending) return
-        setSending(true); setError("")
-        const snapshot = {
-          ...data,
-          "loan-amount": amountNum ? formatMoney(amountNum, currency) : data["loan-amount"],
-          "loan-currency": currency,
-          preferredContact: preferredContactOf(data),
-          ...Object.fromEntries((["annual-income", "other-income"] as const)
-            .filter((k) => (data[k] ?? "").trim()).map((k) => [k, `${currency} ${data[k].trim()}`])),
-          "loan-amount-usd": amountNum ? formatMoney(toUsd(amountNum, currency), "USD") : "",
-        }
-        const result = await submitApplication(snapshot, idFiles)
-        setSending(false)
-        if (isLive && !result.delivered) {
-          setError(result.error ? `Could not deliver the application: ${result.error}` : "Could not deliver the application. Please try again.")
-          return
-        }
-        setDelivered(result.delivered)
-        setData({}); setIdFiles({}); setIdErrors({}); setContactError(""); setDone(true); scrollTop()
+        if (await app.submit()) scrollTop()
       }} className="glass-light rounded-[28px] p-5 sm:p-10">
         <h1 className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-extrabold leading-tight tracking-tight text-slate-900">Online Loan Application Form<Ar en="Online Loan Application Form" className="mt-1 text-[0.5em] font-medium tracking-normal" /></h1>
         <p className="mt-3 max-w-2xl leading-relaxed text-slate-600">
@@ -391,7 +178,7 @@ export function MortgageForm() {
               <Row label="Loan Type" groupId="g-loan-type" hint={loanType ? "Choose the product you want" : "Choose a loan type to continue"}>
                 {typeLocked && loanType ? (
                   <div data-testid="loan-type-chip" className="inline-flex w-fit items-center gap-2.5 rounded-[22px] border border-[#3B2BBF]/25 bg-[#3B2BBF]/[.06] py-1.5 pr-1.5 pl-2 text-sm">
-                    <img src={LOAN_TYPES.find((t) => t.id === loanType)?.img} alt="" width={256} height={256} className="h-7 w-7 object-contain" />
+                    <img src={loanImg(loanType)} alt="" width={256} height={256} className="h-7 w-7 object-contain" />
                     <span className="font-semibold leading-tight text-[#3B2BBF]">{loanTypeById(loanType)?.label ?? loanType}<Ar en={loanType} /></span>
                     <span aria-hidden className="text-slate-400">·</span>
                     <button type="button" data-testid="loan-type-change" onClick={() => setTypeLocked(false)} aria-label={`Change loan type (currently ${loanTypeById(loanType)?.label ?? loanType})`}
@@ -443,8 +230,7 @@ export function MortgageForm() {
               </Row>
 
               <Row label="Loan Duration" htmlFor="loan-duration" hint="How long you want to repay">
-                <Select id="loan-duration" label="Loan Duration" placeholder={loanType ? "Select term…" : "Select a loan type first"}
-                  options={durations} data={data} set={set} />
+                <DurationInput app={app} />
               </Row>
 
               <div className="my-2 h-px bg-slate-100" />
@@ -464,17 +250,17 @@ export function MortgageForm() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field id="postal" label="Postal / Zip Code" autoComplete="postal-code" maxLength={12} data={data} set={set} />
-                  <Select id="country" caption label="Country" placeholder="Country" options={COUNTRIES} data={data} set={set} />
+                  <CountryCombobox value={data.country ?? ""} onChange={(v) => set("country", v)} />
                 </div>
               </Row>
               <Row label="Birth Date" htmlFor="birth-date" hint="MM/DD/YYYY">
-                <Field noAr id="birth-date" label="Birth Date" type="date" autoComplete="bday" max="2008-10-17" min="1906-01-01" data={data} set={set} />
+                <Field noAr id="birth-date" label="Birth Date" type="date" autoComplete="bday" max={BIRTH_MAX} min={BIRTH_MIN} data={data} set={set} />
               </Row>
               <Row label="Email" htmlFor="email">
                 <Field id="email" label="name@example.com" type="email" autoComplete="email" inputMode="email" data={data} set={set} />
               </Row>
               <Row label="Marital Status" htmlFor="marital">
-                <Select id="marital" label="Marital Status" placeholder="Select…" options={["Single", "Married", "Divorced", "Widowed", "Separated"]} data={data} set={set} />
+                <Select id="marital" label="Marital Status" placeholder="Select…" options={MARITAL} data={data} set={set} />
               </Row>
             </>)}
 
@@ -513,7 +299,7 @@ export function MortgageForm() {
                 <Field id="other-income" label="e.g. 500" inputMode="numeric" pattern="[0-9,.\s]+" optional data={data} set={set} />
               </Row>
               <Row label="Pay Frequency" htmlFor="pay-frequency">
-                <Select id="pay-frequency" label="Pay Frequency" placeholder="Select…" options={["Monthly", "Twice a month", "Every two weeks", "Weekly", "Irregular"]} data={data} set={set} />
+                <Select id="pay-frequency" label="Pay Frequency" placeholder="Select…" options={PAY_FREQUENCIES} data={data} set={set} />
               </Row>
             </>)}
 
@@ -524,14 +310,14 @@ export function MortgageForm() {
                   {" · "}
                   <span className="tabular-nums">{formatMoney(amountNum || 0, currency)}</span>
                   {" · "}
-                  <span>{data["loan-duration"] || "—"}</span>
-                  <Ar text={[AR[loanType], data["loan-duration"] && ar_(data["loan-duration"])].filter(Boolean).join(" · ")} />
+                  <span>{durationText(months) || "—"}</span>
+                  <Ar text={[AR[loanType], months && ar_(durationReadout(months))].filter(Boolean).join(" · ")} />
                 </div>
               )}
 
               {loanType === "Mortgage" && (<>
                 <Row label="Loan Purpose" groupId="g-purpose">
-                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Buy a home", "Refinance", "Home equity", "Build a home"]} data={data} set={set} />
+                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={PURPOSES["Mortgage"].options} data={data} set={set} />
                 </Row>
               </>)}
 
@@ -544,7 +330,7 @@ export function MortgageForm() {
                   </div>
                 </Row>
                 <Row label="Use of Funds" groupId="g-purpose">
-                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Buy new vehicle", "Buy used vehicle", "Refinance auto loan"]} data={data} set={set} />
+                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={PURPOSES["Auto/Car"].options} data={data} set={set} />
                 </Row>
               </>)}
 
@@ -553,7 +339,7 @@ export function MortgageForm() {
                   <Field id="business-name" label="Registered business name" data={data} set={set} />
                 </Row>
                 <Row label="Use of Funds" groupId="g-purpose">
-                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Working capital", "Equipment", "Expansion", "Start-up costs"]} data={data} set={set} />
+                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={PURPOSES["Business"].options} data={data} set={set} />
                 </Row>
               </>)}
 
@@ -562,13 +348,13 @@ export function MortgageForm() {
                   <Field id="school-name" label="School or program name" data={data} set={set} />
                 </Row>
                 <Row label="Use of Funds" groupId="g-purpose">
-                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Tuition", "Living expenses", "Both tuition and living"]} data={data} set={set} />
+                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={PURPOSES["Education"].options} data={data} set={set} />
                 </Row>
               </>)}
 
               {loanType === "Personal" && (<>
                 <Row label="Use of Funds" groupId="g-purpose">
-                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Debt consolidation", "Home improvement", "Medical", "Travel", "Other"]} data={data} set={set} />
+                  <Radios name="purpose" labelledBy="g-purpose" cols={2} options={PURPOSES["Personal"].options} data={data} set={set} />
                 </Row>
               </>)}
 
@@ -663,7 +449,7 @@ export function MortgageForm() {
               <Row label="Review" groupId="g-review" optional>
                 <dl data-testid="review-summary" className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2 rounded-2xl border border-[#3B2BBF]/15 bg-[#3B2BBF]/[.03] p-4 text-sm">
                   {([
-                    ["Loan", [data["loan-type"], data["loan-duration"]].filter(Boolean).join(" · ")],
+                    ["Loan", [data["loan-type"], durationText(months)].filter(Boolean).join(" · ")],
                     ["Amount", amountNum ? `${formatMoney(amountNum, currency)}${currency !== "USD" ? ` (≈ ${formatMoney(toUsd(amountNum, currency), "USD")})` : ""}` : ""],
                     ["Applicant", [data["first-name"], data["last-name"]].filter(Boolean).join(" ")],
                     ["Preferred contact", preferredContactOf(data) || "Not chosen yet"],

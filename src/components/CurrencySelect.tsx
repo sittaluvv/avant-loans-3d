@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react"
 import { Check, ChevronDown } from "lucide-react"
+import { Flag } from "./Flag"
 import { CURRENCIES, currencyInfo, setCurrency, useCurrency } from "../lib/currency"
 
 /** Header currency picker (flag + code). `dark` = over the hero video. */
@@ -45,7 +46,7 @@ export function CurrencySelect({ dark = false }: { dark?: boolean }) {
           dark ? "border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 focus-visible:outline-white" : "border-[#3B2BBF]/20 bg-white text-slate-800 hover:border-[#3B2BBF]/45 focus-visible:outline-[#3B2BBF]"
         }`}
       >
-        <span aria-hidden className="text-base leading-none">{cur.flag}</span>
+        <Flag iso={cur.flag} className="h-[14px] w-[19px]" />
         <span>{cur.code}</span>
         <ChevronDown aria-hidden className={`h-3.5 w-3.5 opacity-70 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
@@ -72,7 +73,7 @@ export function CurrencySelect({ dark = false }: { dark?: boolean }) {
                 onClick={() => choose(i)}
                 className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${i === active ? "bg-[#3B2BBF]/[.07]" : ""}`}
               >
-                <span aria-hidden className="text-lg leading-none">{c.flag}</span>
+                <Flag iso={c.flag} />
                 <span className="font-semibold tabular-nums">{c.code}</span>
                 <span className="min-w-0 flex-1 truncate text-slate-500">{c.country}</span>
                 {sel && <Check aria-hidden className="h-4 w-4 flex-none text-[#3B2BBF]" />}

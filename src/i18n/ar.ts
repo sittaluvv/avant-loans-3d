@@ -36,6 +36,9 @@ export const AR: Record<string, string> = {
   // Step 1
   "Loan Amount": "مبلغ التمويل",
   "Loan Duration": "مدة التمويل",
+  "Months": "أشهر",
+  "Years": "سنوات",
+  "How long you want to repay": "المدة التي تريد السداد خلالها",
   "Your Name": "الاسم",
   "First": "الاسم الأول",
   "Last": "اسم العائلة",
@@ -163,6 +166,49 @@ export const AR: Record<string, string> = {
     "أؤكد صحة البيانات، وأوافق على تواصل أفانت الشرق الأوسط معي بشأن هذا الاستفسار.",
   "SUBMIT_NOTICE": "بإرسال النموذج فأنت تقدّم استفسارًا، وسيتواصل معك فريقنا بالوسيلة التي اخترتها. الإرسال لا يُعدّ عرض تمويل أو موافقة عليه.",
 
+  // /apply-v2/ preview
+  "Loan application": "طلب التمويل",
+  "Your loan": "تمويلك",
+  "Choose the product, amount and how long you want to repay.": "اختر المنتج والمبلغ ومدة السداد.",
+  "About you": "بياناتك",
+  "Tell us who is applying.": "أخبرنا بمن يتقدّم بالطلب.",
+  "Where you live": "مكان السكن",
+  "Your current home address.": "عنوان سكنك الحالي.",
+  "Your work": "عملك",
+  "Your employment status today.": "حالتك الوظيفية الحالية.",
+  "Your income": "دخلك",
+  "Before tax, in your selected currency.": "قبل الضريبة، بالعملة المختارة.",
+  "A few details about this loan.": "بعض التفاصيل عن هذا التمويل.",
+  "Review & send": "المراجعة والإرسال",
+  "Check your answers, choose how we contact you, then send.": "راجع إجاباتك، واختر وسيلة التواصل، ثم أرسل.",
+  "Address": "العنوان",
+  "Work": "العمل",
+  "Income": "الدخل",
+  "Details": "التفاصيل",
+  "Identity": "الهوية",
+  "Edit": "تعديل",
+  "Continue": "متابعة",
+  "Save & review": "حفظ ومراجعة",
+  "Your summary": "ملخّصك",
+  "Enquiry sent": "تم إرسال الاستفسار",
+  "Loan type": "نوع التمويل",
+  "Term": "المدة",
+  "Contact": "التواصل",
+  "First name": "الاسم الأول",
+  "Last name": "اسم العائلة",
+  "Name": "الاسم",
+  "Birth date": "تاريخ الميلاد",
+  "Marital status": "الحالة الاجتماعية",
+  "Employment": "العمل",
+  "Annual income": "الدخل السنوي",
+  "Other monthly income": "دخل شهري إضافي",
+  "Pay frequency": "دورية صرف الراتب",
+  "Purpose": "الغرض",
+  "Documents": "المستندات",
+  "Ready to send": "جاهز للإرسال",
+  "Chat on WhatsApp": "المحادثة عبر واتساب",
+  "Reply by email": "الرد عبر البريد الإلكتروني",
+
   // Homepage Apply buttons (/ and /v2/)
   "Apply for Loan": "قدّم طلب التمويل",
   "Apply now": "قدّم الآن",
@@ -197,12 +243,19 @@ export const AR: Record<string, string> = {
 /** Patterns for dynamic strings (counts, durations, sizes). */
 const RULES: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^Please complete (the highlighted field|the \d+ highlighted fields) to continue\.$/, (m) => (m[1].startsWith("the highlighted") ? "يرجى إكمال الحقل المحدد للمتابعة." : "يرجى إكمال الحقول المحددة للمتابعة.")],
-  [/^(\d+) months$/, (m) => `${m[1]} شهرًا`],
-  [/^(\d+) years$/, (m) => `${m[1]} ${Number(m[1]) <= 10 ? "سنوات" : "سنة"}`],
+  [/^(\d+) months?$/, (m) => arMonths(m[1])],
+  [/^([\d.]+) years?$/, (m) => arYears(m[1])],
+  [/^(\d+) months? · ([\d.]+) years?$/, (m) => `${arMonths(m[1])} · ${arYears(m[2])}`],
+  [/^Allowed: (\d+)–(\d+) (months|years)$/, (m) => `المدة المسموحة: من ${m[1]} إلى ${m[2]} ${m[3] === "months" ? "شهرًا" : "سنوات"}`],
+  [/^Enter a loan duration between (\d+) and (\d+) (months|years)\.$/, (m) => `أدخل مدة تمويل بين ${m[1]} و${m[2]} ${m[3] === "months" ? "شهرًا" : "سنوات"}.`],
+  [/^Use whole (months|years) only \(between (\d+) and (\d+) (?:months|years)\)\.$/, (m) => `استخدم أرقامًا صحيحة فقط (من ${m[2]} إلى ${m[3]} ${m[1] === "months" ? "شهرًا" : "سنوات"}).`],
   [/^Step (\d) of (\d)$/, (m) => `الخطوة ${m[1]} من ${m[2]}`],
   [/^This file is [\d.]+ MB\. The limit is 5 MB\.$/, () => "حجم الملف يتجاوز الحد الأقصى (5 ميغابايت)."],
   [/^Could not deliver the application/, () => "تعذّر إرسال الطلب. يرجى المحاولة مرة أخرى."],
 ]
+
+function arMonths(n: string) { const k = Number(n); return k === 1 ? "شهر واحد" : k === 2 ? "شهران" : k <= 10 ? `${n} أشهر` : `${n} شهرًا` }
+function arYears(n: string) { const k = Number(n); return k === 1 ? "سنة واحدة" : k === 2 ? "سنتان" : k <= 10 && Number.isInteger(k) ? `${n} سنوات` : `${n} سنة` }
 
 export function ar(en?: string | null): string | undefined {
   if (!en) return undefined

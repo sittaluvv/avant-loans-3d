@@ -13,6 +13,7 @@ export default defineConfig({
         main: path.resolve(__dirname, "index.html"),
         apply: path.resolve(__dirname, "apply/index.html"),
         v2: path.resolve(__dirname, "v2/index.html"),
+        applyv2: path.resolve(__dirname, "apply-v2/index.html"),
       },
     },
   },
