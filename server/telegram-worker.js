@@ -50,9 +50,8 @@ function formatTelegram(body) {
     `Other monthly: ${f["other-income"] || "0"} | Debts: ${f["monthly-debts"] || ""} | Pay: ${f["pay-frequency"] || ""}`,
     "",
     "== Loan details ==",
-    `Purpose: ${f.purpose || ""} | Type: ${f["property-type"] || ""}`,
-    `Location: ${f["property-city"] || ""}, ${f["property-country"] || ""}`,
-    `Value: ${f["property-value"] || ""} | Down: ${f["down-payment"] || ""} | Term: ${f.term || ""}`,
+    `Purpose: ${f.purpose || ""}`,
+    `Notes: ${f.notes || ""}`,
   ]
   return lines.join("\n").slice(0, 3900)
 }

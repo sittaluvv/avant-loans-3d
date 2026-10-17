@@ -176,10 +176,6 @@ export function MortgageForm() {
   const next = () => { if (validate()) { setStep((s) => s + 1); scrollTop() } }
   const back = () => { setError(""); setStep((s) => s - 1); scrollTop() }
 
-  const value = money(data["property-value"]), down = money(data["down-payment"])
-  const computedLoan = Math.max(value - down, 0)
-  const ltv = value > 0 ? Math.round((computedLoan / value) * 100) : 0
-
   const stepLabels = useMemo(() => {
     const third = {
       Mortgage: "Mortgage Details",
@@ -405,25 +401,6 @@ export function MortgageForm() {
                 <Row label="Loan Purpose" groupId="g-purpose">
                   <Radios name="purpose" labelledBy="g-purpose" cols={2} options={["Buy a home", "Refinance", "Home equity", "Build a home"]} data={data} set={set} />
                 </Row>
-                <Row label="Property Type" htmlFor="property-type">
-                  <Select id="property-type" label="Property Type" placeholder="Select…" options={["Apartment", "Villa", "Townhouse", "Land / plot", "Other"]} data={data} set={set} />
-                </Row>
-                <Row label="Property Location" groupId="g-ploc">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Field id="property-city" label="City" data={data} set={set} />
-                    <Select id="property-country" label="Property country" placeholder="Country" options={COUNTRIES} data={data} set={set} />
-                  </div>
-                </Row>
-                <Row label="Property Value & Down Payment" groupId="g-money" hint="Estimates are fine, in USD">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Field id="property-value" label="Estimated property value" inputMode="numeric" pattern="[0-9,.\s]+" data={data} set={set} />
-                    <Field id="down-payment" label="Down payment" inputMode="numeric" pattern="[0-9,.\s]+" data={data} set={set} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 rounded-xl border border-ion/25 bg-electric/[.07] p-4" aria-live="polite">
-                    <div><p className="text-xs text-mist">From property math</p><p className="font-display text-xl tabular-nums">${fmt.format(computedLoan)}</p></div>
-                    <div><p className="text-xs text-mist">Loan-to-value</p><p className="font-display text-xl tabular-nums">{ltv}%</p></div>
-                  </div>
-                </Row>
               </>)}
 
               {loanType === "Auto/Car" && (<>
@@ -466,6 +443,16 @@ export function MortgageForm() {
               {!loanType && (
                 <p className="py-6 text-mist">Go back to step 1 and choose a loan type.</p>
               )}
+
+              <Row label="Notes" htmlFor="notes" hint="Anything else we should know" optional>
+                <div>
+                  <label htmlFor="notes" className="sr-only">Notes</label>
+                  <textarea id="notes" name="notes" rows={3}
+                    value={data.notes ?? ""} onChange={(e) => set("notes", e.target.value)}
+                    placeholder="Optional notes"
+                    className={inputCls + " min-h-[96px] resize-y"} />
+                </div>
+              </Row>
 
               <Row label="Consent" groupId="g-consent">
                 <label htmlFor="consent" className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-mist">

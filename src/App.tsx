@@ -1,120 +1,107 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react"
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react"
-import { Zap, Smartphone, Sparkles, ShieldCheck, Clock, Gauge, Lock, UserRound, Briefcase, Home } from "lucide-react"
-import { Magnetic } from "./components/Magnetic"
+import { motion, useReducedMotion } from "motion/react"
+import { Zap, Smartphone, Sparkles, ShieldCheck, Clock, Lock } from "lucide-react"
+import { LightHeader } from "./components/LightHeader"
+import { APPLY_URL } from "./components/Header"
 import { TiltCard } from "./components/TiltCard"
-import { Timeline } from "./components/Timeline"
-import { Header, APPLY_URL } from "./components/Header"
-import { Footer } from "./components/Footer"
-import { Backdrop } from "./components/Backdrop"
-import { CssCard } from "./components/CssCard"
+import { Logo } from "./components/Logo"
+import heroImg from "./assets/home/hero-3d.webp"
+import benefitFast from "./assets/home/benefit-fast.webp"
+import benefitManage from "./assets/home/benefit-manage.webp"
+import benefitFlex from "./assets/home/benefit-flex.webp"
 
-const HeroScene = lazy(() => import("./components/HeroScene"))
+const benefits = [
+  { img: benefitFast, icon: Zap, title: "Fast decisions", body: "Get a decision in minutes and funds as soon as the next business day." },
+  { img: benefitManage, icon: Smartphone, title: "Easy to manage", body: "Track payments and manage your loan from your phone." },
+  { img: benefitFlex, icon: Sparkles, title: "Use it your way", body: "Home improvements, debt consolidation, or unexpected expenses." },
+]
 
-function hasWebGL() {
-  try {
-    const c = document.createElement("canvas")
-    return !!(window.WebGLRenderingContext && (c.getContext("webgl2") || c.getContext("webgl")))
-  } catch { return false }
-}
+const steps = [
+  { n: "1", title: "Apply online", body: "Fill out a short form in minutes. Checking your options won’t affect your credit score." },
+  { n: "2", title: "Get a decision", body: "Receive a decision quickly so you know your options right away." },
+  { n: "3", title: "Get funded", body: "Once approved and signed, funds can be available as soon as the next business day." },
+]
 
 function Hero() {
-  const reduced = !!useReducedMotion()
-  const wrap = useRef<HTMLElement>(null)
-  const [active, setActive] = useState(true)
-  const [gl, setGl] = useState<boolean | null>(null)
-  useEffect(() => { setGl(hasWebGL()) }, [])
-  useEffect(() => {
-    const el = wrap.current
-    if (!el) return
-    const io = new IntersectionObserver(([e]) => setActive(e.isIntersecting), { threshold: 0 })
-    io.observe(el)
-    const vis = () => setActive(!document.hidden && el.getBoundingClientRect().bottom > 0)
-    document.addEventListener("visibilitychange", vis)
-    return () => { io.disconnect(); document.removeEventListener("visibilitychange", vis) }
-  }, [])
-  const { scrollYProgress } = useScroll({ target: wrap, offset: ["start start", "end start"] })
-  const textY = useTransform(scrollYProgress, [0, 1], [0, reduced ? 0 : -120])
-  const textO = useTransform(scrollYProgress, [0, 0.8], [1, reduced ? 1 : 0])
-
-  const headline = "Move forward with a personal loan."
+  const reduced = useReducedMotion()
   return (
-    <section ref={wrap} id="top" className="relative overflow-hidden pt-20 md:min-h-[100svh] md:pt-24">
-      <div aria-hidden className="gridfloor absolute inset-x-0 bottom-0 h-[55%] [transform:perspective(600px)_rotateX(60deg)] origin-bottom opacity-70" />
-      <div className="relative h-[46svh] min-h-[300px] md:absolute md:inset-0 md:left-[40%] md:h-auto">
-        {gl === false ? <CssCard animate={!reduced} /> : gl && (
-          <Suspense fallback={<CssCard animate={false} />}>
-            <HeroScene reduced={reduced} active={active} />
-          </Suspense>
-        )}
-      </div>
-      <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block md:bg-gradient-to-r md:from-abyss md:via-abyss/40 md:to-transparent" />
-      <motion.div style={{ y: textY, opacity: textO }} className="relative mx-auto -mt-6 flex max-w-6xl flex-col px-5 pb-16 sm:px-8 md:mt-0 md:min-h-[calc(100svh-6rem)] md:justify-center md:pb-24">
-        <div className="max-w-[600px]">
-          <motion.p initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6 }}
-            className="glass mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs text-mist sm:text-sm">
-            <span className="h-2 w-2 rounded-full bg-glow shadow-[0_0_10px_2px_rgba(143,211,255,.9)]" />
-            No impact on your credit score to check
-          </motion.p>
-          <h1 className="display-xl chrome-text text-[clamp(2.35rem,5.6vw,4.7rem)]">
-            {headline.split(" ").map((w, i) => (
-              <motion.span key={i} className="inline-block pr-[0.22em]"
-                initial={reduced ? false : { opacity: 0, y: 50, rotateX: -70, filter: "blur(8px)" }}
-                animate={{ opacity: 1, y: 0, rotateX: 0, filter: "blur(0px)" }}
-                transition={{ delay: 0.2 + i * 0.08, duration: 0.9, ease: [0.2, 0.7, 0.2, 1] }}
-                style={{ transformOrigin: "50% 100%" }}>
-                {w}
-              </motion.span>
-            ))}
-          </h1>
-          <motion.p initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9, duration: 0.8 }}
-            className="mt-6 max-w-md text-lg leading-relaxed text-mist sm:text-xl">
-            Simple, fast, and transparent. Check your options in minutes, then manage everything from your phone.
-          </motion.p>
-          <motion.div initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.05, duration: 0.6 }}
-            className="mt-9 flex flex-wrap items-center gap-4">
-            <Magnetic href={APPLY_URL} className="bg-electric px-8 py-4 text-lg text-white shadow-[0_10px_50px_-6px_rgba(13,91,255,1)] hover:bg-ion">
+    <section className="bg-gradient-to-b from-slate-50 to-white">
+      <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:py-20">
+        <div>
+          <motion.h1
+            initial={reduced ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55 }}
+            className="font-display text-[clamp(2.4rem,5.2vw,3.75rem)] font-semibold leading-[1.1] tracking-tight text-slate-900"
+          >
+            Move forward with a personal loan
+          </motion.h1>
+          <p className="mt-5 max-w-md text-lg leading-relaxed text-slate-600">
+            Simple, fast, and transparent. Check your options in minutes — no impact on your credit score.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <a
+              href={APPLY_URL}
+              className="inline-flex items-center justify-center rounded-lg bg-[#0D5BFF] px-8 py-3.5 text-base font-semibold text-white shadow-[0_10px_30px_-10px_rgba(13,91,255,.7)] transition-colors hover:bg-[#0A4ACC] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0D5BFF]"
+            >
               Apply for Loan
-            </Magnetic>
-            <Magnetic href="#how" strength={0.2} className="glass px-7 py-4 text-frost hover:border-ion/50">
-              See how it works
-            </Magnetic>
-          </motion.div>
+            </a>
+          </div>
+          <p className="mt-3 text-sm text-slate-500">Checking options won’t affect your credit score.</p>
         </div>
-      </motion.div>
+        <motion.div
+          initial={reduced ? false : { opacity: 0, scale: 0.96, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.65, delay: 0.1 }}
+          className="relative overflow-hidden"
+          style={{ perspective: 1200 }}
+        >
+          <div className="pointer-events-none absolute inset-2 rounded-[32px] bg-[#0D5BFF]/10 blur-2xl" aria-hidden />
+          <TiltCard className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-0 shadow-[0_25px_60px_-30px_rgba(15,23,42,.35)]">
+            <img
+              src={heroImg}
+              alt="3D illustration of an Avant credit card floating among gold coins"
+              width={1200}
+              height={800}
+              className="aspect-[3/2] w-full object-cover"
+              fetchPriority="high"
+            />
+          </TiltCard>
+        </motion.div>
+      </div>
     </section>
   )
 }
 
-const benefits = [
-  { icon: Zap, title: "Fast decisions", body: "Get a decision in minutes and funds as soon as the next business day.", stat: "Minutes" },
-  { icon: Smartphone, title: "Easy to manage", body: "Track payments and manage your loan from your phone.", stat: "One app" },
-  { icon: Sparkles, title: "Use it your way", body: "Home improvements, debt consolidation, or unexpected expenses.", stat: "Your call" },
-]
-
 function Benefits() {
   const reduced = useReducedMotion()
   return (
-    <section id="benefits" className="relative mx-auto max-w-6xl scroll-mt-24 px-5 py-24 sm:px-8 md:py-32">
-      <h2 className="display-xl max-w-2xl text-[clamp(2rem,4.6vw,3.6rem)]">Built to feel effortless.</h2>
-      <p className="mt-5 max-w-xl text-lg text-mist">Three reasons people pick a personal loan they can actually understand.</p>
-      <div className="mt-14 grid gap-6 md:grid-cols-3">
-        {benefits.map((b, i) => {
-          const Icon = b.icon
-          return (
-            <motion.div key={b.title} initial={reduced ? false : { opacity: 0, y: 50, rotateX: 25 }} whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-              viewport={{ once: true, margin: "-10% 0px" }} transition={{ delay: i * 0.12, duration: 0.8, ease: [0.2, 0.7, 0.2, 1] }}>
-              <TiltCard className="p-7 sm:p-8">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-electric to-deep shadow-[0_10px_30px_-5px_rgba(13,91,255,.9)]" style={{ transform: "translateZ(30px)" }}>
-                  <Icon aria-hidden className="h-7 w-7 text-white" />
-                </div>
-                <p className="mt-10 font-display text-4xl font-semibold text-glow/90">{b.stat}</p>
-                <h3 className="mt-3 font-display text-xl font-semibold">{b.title}</h3>
-                <p className="mt-2 leading-relaxed text-mist">{b.body}</p>
-              </TiltCard>
-            </motion.div>
-          )
-        })}
+    <section id="benefits" className="scroll-mt-24 bg-slate-50 py-16 sm:py-20">
+      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+        <div className="grid gap-8 md:grid-cols-3">
+          {benefits.map((b, i) => {
+            const Icon = b.icon
+            return (
+              <motion.div
+                key={b.title}
+                initial={reduced ? false : { opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-10% 0px" }}
+                transition={{ delay: i * 0.08, duration: 0.5 }}
+              >
+                <TiltCard className="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 shadow-sm">
+                  <img src={b.img} alt="" width={640} height={420} loading="lazy" className="aspect-[3/2] w-full object-cover" />
+                  <div className="p-6 text-center">
+                    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#0D5BFF]/10 text-[#0D5BFF]">
+                      <Icon aria-hidden className="h-5 w-5" />
+                    </div>
+                    <h2 className="font-display text-xl font-semibold text-slate-900">{b.title}</h2>
+                    <p className="mt-2 text-[15px] leading-relaxed text-slate-600">{b.body}</p>
+                  </div>
+                </TiltCard>
+              </motion.div>
+            )
+          })}
+        </div>
       </div>
     </section>
   )
@@ -122,102 +109,81 @@ function Benefits() {
 
 function How() {
   return (
-    <section id="how" className="relative scroll-mt-24 px-5 py-24 sm:px-8 md:py-32">
-      <div className="mx-auto mb-16 max-w-6xl md:text-center">
-        <h2 className="display-xl text-[clamp(2rem,4.6vw,3.6rem)]">How it works</h2>
-        <p className="mt-5 text-lg text-mist md:mx-auto md:max-w-xl">Three simple steps. No impact on your credit score to check your options.</p>
-      </div>
-      <Timeline />
-    </section>
-  )
-}
-
-const trust = [
-  { icon: ShieldCheck, text: "Soft check only: no impact on your credit score" },
-  { icon: Clock, text: "Decisions in minutes" },
-  { icon: Gauge, text: "Funds as soon as the next business day" },
-  { icon: Smartphone, text: "Manage your loan from your phone" },
-  { icon: Lock, text: "Demo form: nothing you type is ever sent" },
-]
-
-function TrustStrip() {
-  const reduced = useReducedMotion()
-  const row = [...trust, ...trust]
-  return (
-    <section aria-label="Why people trust the process" className="relative overflow-hidden border-y border-white/10 bg-navy/40 py-7">
-      <div className={`flex w-max gap-12 ${reduced ? "flex-wrap justify-center w-auto px-6" : "animate-[marquee_38s_linear_infinite]"}`}>
-        {(reduced ? trust : row).map((t, i) => {
-          const Icon = t.icon
-          return (
-            <p key={i} aria-hidden={!reduced && i >= trust.length} className="flex items-center gap-3 whitespace-nowrap text-mist">
-              <Icon aria-hidden className="h-5 w-5 text-glow" /> {t.text}
-            </p>
-          )
-        })}
-      </div>
-      <style>{`@keyframes marquee{to{transform:translateX(-50%)}}`}</style>
-    </section>
-  )
-}
-
-const applySteps = [
-  { icon: UserRound, n: "01", t: "Personal Details", d: "Name, address, birth date and household." },
-  { icon: Briefcase, n: "02", t: "Employment & Income", d: "Where you work and what comes in each month." },
-  { icon: Home, n: "03", t: "Mortgage Loan Details", d: "The property, your down payment and term." },
-]
-
-function Apply() {
-  return (
-    <section id="apply" className="relative mx-auto max-w-6xl scroll-mt-24 px-5 py-24 sm:px-8 md:py-32">
-      <div className="glass edge-glow relative overflow-hidden rounded-[36px] p-7 sm:p-12">
-        <div aria-hidden className="absolute -top-32 -right-24 h-80 w-80 rounded-full bg-electric/30 blur-3xl" />
-        <div className="relative grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
-          <div>
-            <h2 className="display-xl text-[clamp(2rem,4.6vw,3.6rem)]">Apply for a loan</h2>
-            <p className="mt-5 max-w-md text-lg text-mist">It takes just a few minutes. No credit score impact to check your options.</p>
-            <div className="mt-9 flex flex-wrap items-center gap-4">
-              <Magnetic href={APPLY_URL} className="bg-electric px-8 py-4 text-lg text-white shadow-[0_10px_50px_-6px_rgba(13,91,255,1)] hover:bg-ion">
-                Start your application
-              </Magnetic>
-            </div>
-            <p className="mt-6 max-w-md rounded-2xl border border-amber-300/30 bg-amber-300/[.06] p-4 text-sm leading-relaxed text-amber-100/90">
-              <strong className="font-semibold text-amber-100">Demo site.</strong> No real loans are offered, and the application form does not send, store or share any information.
-            </p>
-          </div>
-          <ol className="grid gap-3">
-            {applySteps.map((s) => {
-              const Icon = s.icon
-              return (
-                <li key={s.n}>
-                  <a href={APPLY_URL} className="group flex items-center gap-5 rounded-2xl border border-white/10 bg-abyss/40 p-5 transition-colors hover:border-ion/50 hover:bg-electric/10">
-                    <span className="font-display text-sm text-glow tabular-nums">{s.n}.</span>
-                    <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-electric to-deep"><Icon aria-hidden className="h-5 w-5" /></span>
-                    <span><span className="block font-display font-semibold">{s.t}</span><span className="block text-sm text-mist">{s.d}</span></span>
-                  </a>
-                </li>
-              )
-            })}
-          </ol>
+    <section id="how" className="scroll-mt-24 bg-white py-16 sm:py-20">
+      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+        <h2 className="text-center font-display text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">How it works</h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-slate-600">Three simple steps. No impact on your credit score to check your options.</p>
+        <ol className="mt-12 grid gap-8 md:grid-cols-3">
+          {steps.map((s) => (
+            <li key={s.n} className="relative rounded-2xl border border-slate-200 bg-slate-50/80 p-6 text-center">
+              <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#0D5BFF] font-display text-sm font-bold text-white shadow-[0_0_0_4px_white,0_0_0_5px_#0D5BFF33]">{s.n}</span>
+              <h3 className="mt-4 font-display text-lg font-semibold text-slate-900">{s.title}</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-slate-600">{s.body}</p>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-12 text-center">
+          <a href={APPLY_URL} className="inline-flex rounded-lg bg-[#0D5BFF] px-8 py-3.5 text-base font-semibold text-white hover:bg-[#0A4ACC] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0D5BFF]">
+            Apply for Loan
+          </a>
         </div>
       </div>
     </section>
   )
 }
 
+function Trust() {
+  const items = [
+    { icon: ShieldCheck, t: "Soft check only — no impact on your credit score" },
+    { icon: Clock, t: "Decisions in minutes" },
+    { icon: Lock, t: "Demo form — no real lender affiliation" },
+  ]
+  return (
+    <section aria-label="Trust" className="border-y border-slate-200 bg-white py-6">
+      <ul className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-10 gap-y-3 px-5 text-sm text-slate-600 sm:px-8">
+        {items.map((i) => {
+          const Icon = i.icon
+          return (
+            <li key={i.t} className="flex items-center gap-2">
+              <Icon aria-hidden className="h-4 w-4 text-[#0D5BFF]" /> {i.t}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+function LightFooter() {
+  return (
+    <footer className="border-t border-slate-200 bg-slate-50 px-5 py-12 sm:px-8">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:justify-between">
+        <div>
+          <Logo className="h-11" onDark={false} />
+          <p className="mt-3 max-w-sm text-sm text-slate-600">Simple, fast, and transparent personal loans. A design concept.</p>
+        </div>
+        <div className="max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm leading-relaxed text-amber-950/80">
+          <p className="font-semibold text-amber-950">Important: this is a demo website.</p>
+          <p className="mt-2">Avant Loans Middle East is not a real lender and is not affiliated with any real lender. No loans are offered here. The application form is for demonstration; submitting it does not create a real application.</p>
+        </div>
+      </div>
+      <p className="mx-auto mt-8 max-w-6xl text-xs text-slate-500">© 2026 Avant Loans Middle East. Demo site. Not affiliated with any real lender.</p>
+    </footer>
+  )
+}
+
 export default function App() {
   return (
-    <>
-      <a href={APPLY_URL} className="sr-only z-[60] rounded-full bg-electric px-4 py-2 focus:not-sr-only focus:fixed focus:top-4 focus:left-4">Skip to application</a>
-      <Backdrop />
-      <Header />
-      <main className="relative z-10">
+    <div className="min-h-svh overflow-x-hidden bg-white text-slate-900 antialiased">
+      <a href={APPLY_URL} className="sr-only z-[60] rounded-lg bg-[#0D5BFF] px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-4 focus:left-4">Skip to application</a>
+      <LightHeader />
+      <main>
         <Hero />
-        <TrustStrip />
         <Benefits />
+        <Trust />
         <How />
-        <Apply />
       </main>
-      <Footer />
-    </>
+      <LightFooter />
+    </div>
   )
 }

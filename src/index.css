@@ -15,12 +15,12 @@
   --color-frost: #f2f6ff;
 }
 
-html { scroll-behavior: smooth; scroll-padding-top: 112px; background: var(--color-abyss); }
+html { scroll-behavior: smooth; scroll-padding-top: 96px; background: #ffffff; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
   font-family: var(--font-sans);
-  color: var(--color-frost);
-  background: var(--color-abyss);
+  color: #0f172a;
+  background: #ffffff;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }

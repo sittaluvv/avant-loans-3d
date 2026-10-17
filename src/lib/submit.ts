@@ -25,7 +25,7 @@ export const FIELD_GROUPS: { title: string; fields: [string, string][] }[] = [
   { title: "Applicant", fields: [["first-name", "First name"], ["last-name", "Last name"], ["email", "Email"], ["birth-date", "Birth date"], ["marital", "Marital status"], ["dependents", "Dependents"], ["residency", "Residency"], ["second-applicant", "Second applicant"]] },
   { title: "Address", fields: [["street", "Street"], ["street-2", "Street line 2"], ["city", "City"], ["region", "Region"], ["postal", "Postal / ZIP"], ["country", "Country"]] },
   { title: "Employment & income", fields: [["employment", "Employment"], ["employer", "Employer"], ["job-title", "Job title"], ["years-employed", "Years employed"], ["annual-income", "Gross annual income"], ["other-income", "Other monthly income"], ["monthly-debts", "Monthly debts"], ["pay-frequency", "Pay frequency"]] },
-  { title: "Loan details", fields: [["purpose", "Purpose"], ["property-type", "Property type"], ["property-city", "Property city"], ["property-country", "Property country"], ["property-value", "Property value"], ["down-payment", "Down payment"], ["vehicle-make", "Vehicle make"], ["vehicle-model", "Vehicle model"], ["vehicle-year", "Vehicle year"], ["business-name", "Business name"], ["school-name", "School / program"], ["term", "Preferred term (legacy)"]] },
+  { title: "Loan details", fields: [["purpose", "Purpose"], ["vehicle-make", "Vehicle make"], ["vehicle-model", "Vehicle model"], ["vehicle-year", "Vehicle year"], ["business-name", "Business name"], ["school-name", "School / program"], ["notes", "Notes"]] },
 ]
 
 export function buildSummaryText(data: Application): string {
