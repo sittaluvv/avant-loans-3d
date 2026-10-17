@@ -67,8 +67,13 @@ async def run(b, w, h, name):
     await pg.click("button[type=submit]"); await pg.wait_for_timeout(700)
     # step 2
     await pg.click("label[for=employment-0]"); await pg.wait_for_timeout(450)
-    await audit(pg, f"{name} step2", 20)
-    await pg.fill("#employer", "Najd Horizon Trading Co."); await pg.fill("#annual-income", "180000"); await pg.fill("#monthly-debts", "1500")
+    await audit(pg, f"{name} step2", 19)
+    gone = await pg.evaluate("!document.getElementById('monthly-debts') && !/Monthly Debt|Car, cards, other loans|الالتزامات الشهرية/.test(document.body.innerText)")
+    check(gone, f"[{name}] Monthly Debt Payments field removed")
+    sec = await pg.evaluate("(() => { const a = document.getElementById('g-emp').closest('fieldset').getBoundingClientRect(); return [a.y + scrollY, a.height] })()")
+    await pg.evaluate(f"window.scrollTo(0, {sec[0]} - 140)"); await pg.wait_for_timeout(300)
+    await pg.screenshot(path=f"{SHOTS}/apply_no_debt{'' if name == '1440' else '_phone'}.png", full_page=True)
+    await pg.fill("#employer", "Najd Horizon Trading Co."); await pg.fill("#annual-income", "180000")
     await pg.select_option("#pay-frequency", "Monthly")
     if name == "390":
         await pg.evaluate("window.scrollTo(0,0)"); await pg.screenshot(path=f"{SHOTS}/apply_ar_phone_step2.png", full_page=True)
@@ -93,6 +98,8 @@ async def run(b, w, h, name):
     body = sent[0].decode("utf8", "ignore") if sent else ""
     i = body.find('{"'); j = body.find("\r\n------", i); p = json.loads(body[i:j]) if body else {}
     check(not ARABIC.search(json.dumps(p, ensure_ascii=False)), f"[{name}] Telegram payload English only")
+    check("monthly-debts" not in p.get("fields", {}) and not re.search(r"monthly debt|debts:", p.get("summary", ""), re.I), f"[{name}] no monthly debts in payload or Telegram summary")
+    print("   summary employment lines:", [l for l in p.get("summary", "").splitlines() if "income" in l.lower() or "Pay" in l])
     await has_ar(pg, "[role=status] h2", name)
     await audit(pg, f"{name} success", 3)
     if name == "1440": await pg.screenshot(path=f"{SHOTS}/apply_ar_success.png")

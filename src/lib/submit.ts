@@ -25,7 +25,7 @@ export const FIELD_GROUPS: { title: string; fields: [string, string][] }[] = [
   { title: "Applicant", fields: [["first-name", "First name"], ["last-name", "Last name"], ["email", "Email"], ["birth-date", "Birth date"], ["marital", "Marital status"]] },
   { title: "Identity", fields: [["id-type", "ID type"], ["id-number", "ID number"], ["id-expiry", "ID expiry"]] },
   { title: "Address", fields: [["street", "Street"], ["street-2", "Street line 2"], ["city", "City"], ["region", "Region"], ["postal", "Postal / ZIP"], ["country", "Country"]] },
-  { title: "Employment & income", fields: [["employment", "Employment"], ["employer", "Employer"], ["job-title", "Job title"], ["years-employed", "Years with employer"], ["own-business-name", "Business name (self-employed)"], ["years-in-business", "Years in business"], ["annual-income", "Gross annual income"], ["other-income", "Other monthly income"], ["monthly-debts", "Monthly debts"], ["pay-frequency", "Pay frequency"]] },
+  { title: "Employment & income", fields: [["employment", "Employment"], ["employer", "Employer"], ["job-title", "Job title"], ["years-employed", "Years with employer"], ["own-business-name", "Business name (self-employed)"], ["years-in-business", "Years in business"], ["annual-income", "Gross annual income"], ["other-income", "Other monthly income"], ["pay-frequency", "Pay frequency"]] },
   { title: "Loan details", fields: [["purpose", "Purpose"], ["vehicle-make", "Vehicle make"], ["vehicle-model", "Vehicle model"], ["vehicle-year", "Vehicle year"], ["business-name", "Business name"], ["school-name", "School / program"], ["notes", "Notes"]] },
 ]
 

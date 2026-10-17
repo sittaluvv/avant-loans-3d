@@ -53,7 +53,7 @@ function formatTelegram(body) {
     "== Employment & income ==",
     [f.employment, f.employer && `at ${f.employer}`, f["job-title"] && `(${f["job-title"]})`, f["own-business-name"] && `business: ${f["own-business-name"]}`].filter(Boolean).join(" "),
     [f["years-employed"] && `Years with employer: ${f["years-employed"]}`, f["years-in-business"] && `Years in business: ${f["years-in-business"]}`, `Gross annual: ${f["annual-income"] || ""}`].filter(Boolean).join(" | "),
-    `Other monthly: ${f["other-income"] || "0"} | Debts: ${f["monthly-debts"] || ""} | Pay: ${f["pay-frequency"] || ""}`,
+    `Other monthly: ${f["other-income"] || "0"} | Pay: ${f["pay-frequency"] || ""}`,
     "",
     "== Loan details ==",
     `Purpose: ${f.purpose || ""}`,

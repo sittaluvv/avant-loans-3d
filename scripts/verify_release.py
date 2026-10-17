@@ -122,7 +122,7 @@ async def apply_flow(b, view):
         await pg.click(f"label[for=employment-{i}]"); await pg.wait_for_timeout(450)
         vis = {k: await pg.locator(f"#{k}").count() for k in ["employer", "job-title", "years-employed", "own-business-name", "years-in-business"]}
         # validation: fill only income fields, try to advance with employer fields empty
-        await pg.fill("#annual-income", "120000"); await pg.fill("#monthly-debts", "500"); await pg.select_option("#pay-frequency", "Monthly")
+        await pg.fill("#annual-income", "120000"); await pg.select_option("#pay-frequency", "Monthly")
         await pg.click("button[type=submit]"); await pg.wait_for_timeout(500)
         blocked = await pg.locator("#g-emp").count() == 1
         invalid = await pg.evaluate("[...document.querySelectorAll('[aria-invalid=true]')].map(e => e.id)")

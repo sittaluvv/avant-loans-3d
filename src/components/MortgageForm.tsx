@@ -360,7 +360,7 @@ export function MortgageForm() {
           "loan-amount": amountNum ? formatMoney(amountNum, currency) : data["loan-amount"],
           "loan-currency": currency,
           preferredContact: preferredContactOf(data),
-          ...Object.fromEntries((["annual-income", "other-income", "monthly-debts"] as const)
+          ...Object.fromEntries((["annual-income", "other-income"] as const)
             .filter((k) => (data[k] ?? "").trim()).map((k) => [k, `${currency} ${data[k].trim()}`])),
           "loan-amount-usd": amountNum ? formatMoney(toUsd(amountNum, currency), "USD") : "",
         }
@@ -511,9 +511,6 @@ export function MortgageForm() {
               </Row>
               <Row label="Other Monthly Income" htmlFor="other-income" hint={`Rental, investments, etc. · ${currency}`}>
                 <Field id="other-income" label="e.g. 500" inputMode="numeric" pattern="[0-9,.\s]+" optional data={data} set={set} />
-              </Row>
-              <Row label="Monthly Debt Payments" htmlFor="monthly-debts" hint={`Car, cards, other loans · ${currency}`}>
-                <Field id="monthly-debts" label="e.g. 650" inputMode="numeric" pattern="[0-9,.\s]+" data={data} set={set} />
               </Row>
               <Row label="Pay Frequency" htmlFor="pay-frequency">
                 <Select id="pay-frequency" label="Pay Frequency" placeholder="Select…" options={["Monthly", "Twice a month", "Every two weeks", "Weekly", "Irregular"]} data={data} set={set} />

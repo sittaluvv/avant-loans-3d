@@ -27,7 +27,7 @@ with sync_playwright() as p:
         pg.select_option("#marital","Married"); f("#dependents","2"); pg.click("text=Tenant"); pg.click("label[for=second-applicant-1]")
         pg.click("text=Next Page"); pg.wait_for_timeout(700)
         info["step2"]=pg.locator("#employer").count()==1
-        pg.click("text=Employed full-time"); f("#employer","Acme"); f("#job-title","Engineer"); f("#years-employed","4"); f("#annual-income","85000"); f("#monthly-debts","500")
+        pg.click("text=Employed full-time"); f("#employer","Acme"); f("#job-title","Engineer"); f("#years-employed","4"); f("#annual-income","85000")
         pg.select_option("#pay-frequency","Monthly")
         if name=="desktop": pg.screenshot(path=f"{OUT}/apply_desktop_step2.png",full_page=True)
         pg.click("text=Next Page"); pg.wait_for_timeout(700)

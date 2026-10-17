@@ -89,7 +89,6 @@ export const AR: Record<string, string> = {
   "Years in business": "سنوات مزاولة النشاط",
   "Gross Annual Income": "إجمالي الدخل السنوي",
   "Other Monthly Income": "دخل شهري إضافي",
-  "Monthly Debt Payments": "الالتزامات الشهرية",
   "Pay Frequency": "دورية صرف الراتب",
   "Monthly": "شهري",
   "Twice a month": "مرتان في الشهر",
