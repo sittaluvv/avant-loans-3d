@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { APPLY_URL, BASE } from "./Header"
 import { Logo } from "./Logo"
+import { BiLabel } from "../i18n/Ar"
 import { pickerLinkProps } from "./LoanTypePicker"
 import { CurrencySelect } from "./CurrencySelect"
 
@@ -34,11 +35,11 @@ export function LightHeader({ overlay = false, links }: { overlay?: boolean; lin
         <a
           {...pickerLinkProps}
           data-testid="header-apply"
-          className={`whitespace-nowrap rounded-full px-4 py-2.5 sm:px-5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+          className={`inline-flex items-center whitespace-nowrap rounded-full px-4 py-2.5 sm:px-5 sm:py-1.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
             dark ? "bg-white text-[#3B2BBF] hover:bg-[#F3F0FF] focus-visible:outline-white" : "bg-[#3B2BBF] text-white shadow-[0_10px_28px_-12px_rgba(59,43,191,.8)] hover:bg-[#2f22a0] focus-visible:outline-[#3B2BBF]"
           }`}
         >
-          <span className="sm:hidden">Apply</span><span className="hidden sm:inline">Apply for Loan</span>
+          {/* phone: single line; a stacked Arabic line would make the header ~9px taller */}<span className="sm:hidden">Apply</span><span className="hidden sm:inline"><BiLabel en="Apply for Loan" arClass={dark ? "!text-[#3B2BBF]/80" : "!text-white/85"} /></span>
         </a>
         </div>
       </div>

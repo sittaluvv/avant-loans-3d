@@ -9,3 +9,8 @@ export function Ar({ en, className = "", inline = false, text }: { en?: string |
 
 /** "English · العربية" for native <option> text, which cannot hold a second line. */
 export const bi = (en: string) => { const t = ar(en); return t ? `${en} · ${t}` : en }
+
+/** English button text with the small Arabic line stacked beneath (centred). */
+export function BiLabel({ en, arClass = "" }: { en: string; arClass?: string }) {
+  return <span className="inline-flex flex-col items-center leading-tight">{en}<Ar en={en} className={`text-center ${arClass}`} /></span>
+}

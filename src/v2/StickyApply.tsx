@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { ArrowRight } from "lucide-react"
+import { BiLabel } from "../i18n/Ar"
 import { pickerLinkProps } from "../components/LoanTypePicker"
 
 /** Phone-only bottom bar that appears once the hero CTA has scrolled away (hidden again near the final CTA). */
@@ -20,8 +21,8 @@ export function StickyApply({ heroCta, finalCta }: { heroCta: React.RefObject<HT
       <div className="flex items-center gap-3">
         <p className="min-w-0 flex-1 text-xs leading-snug text-slate-600"><span className="block font-semibold text-slate-900">Ready to apply?</span>Personal, auto, mortgage and more</p>
         <a {...pickerLinkProps} tabIndex={show ? 0 : -1} data-testid="sticky-apply-btn"
-          className="inline-flex flex-none items-center gap-1.5 rounded-full bg-[#3B2BBF] px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(59,43,191,.9)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">
-          Apply now <ArrowRight aria-hidden className="h-4 w-4" />
+          className="inline-flex flex-none items-center gap-1.5 rounded-full bg-[#3B2BBF] px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(59,43,191,.9)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">
+          <BiLabel en="Apply now" arClass="!text-white/85" /> <ArrowRight aria-hidden className="h-4 w-4" />
         </a>
       </div>
     </div>

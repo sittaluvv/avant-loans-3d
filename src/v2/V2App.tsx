@@ -9,6 +9,7 @@ import { WhyUs } from "../components/WhyUs"
 import { APPLY_URL } from "../components/Header"
 import { LOAN_TYPE_LIST, applyUrlFor } from "../lib/loanTypes"
 import { COMPANY_LINE } from "../lib/legal"
+import { BiLabel } from "../i18n/Ar"
 import { Hero3D } from "./Hero3D"
 import { Faq } from "./Faq"
 import { ContactOptions } from "./ContactOptions"
@@ -85,8 +86,8 @@ export default function V2App() {
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
                 <a ref={heroCta} {...pickerLinkProps} data-testid="hero-apply"
-                  className="group inline-flex items-center gap-2 rounded-full bg-[#3B2BBF] px-8 py-4 text-base font-semibold text-white shadow-[0_18px_40px_-14px_rgba(59,43,191,.9)] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#2f22a0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF] motion-reduce:hover:translate-y-0">
-                  Apply now <ArrowRight aria-hidden className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  className="group inline-flex items-center gap-2 rounded-full bg-[#3B2BBF] px-8 py-3 text-base font-semibold text-white shadow-[0_18px_40px_-14px_rgba(59,43,191,.9)] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#2f22a0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF] motion-reduce:hover:translate-y-0">
+                  <BiLabel en="Apply now" arClass="!text-white/85" /> <ArrowRight aria-hidden className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </a>
                 <a href="#how" className="text-sm font-semibold text-[#3B2BBF] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">How it works</a>
               </div>
@@ -198,8 +199,8 @@ export default function V2App() {
                 <h2 id="v2-cta-title" className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">Ready when you are</h2>
                 <p className="mt-3 max-w-lg text-white/80">Choose your loan type and send your enquiry online. Our team will review it and contact you by WhatsApp or email.</p>
                 <div className="mt-7 flex flex-wrap items-center gap-4">
-                  <a {...pickerLinkProps} data-testid="cta-apply" className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-semibold text-[#3B2BBF] hover:bg-[#F3F0FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                    Apply now <ArrowRight aria-hidden className="h-4 w-4" />
+                  <a {...pickerLinkProps} data-testid="cta-apply" className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-3 text-base font-semibold text-[#3B2BBF] hover:bg-[#F3F0FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                    <BiLabel en="Apply now" arClass="!text-[#3B2BBF]/80" /> <ArrowRight aria-hidden className="h-4 w-4" />
                   </a>
                   <ContactOptions dark />
                 </div>

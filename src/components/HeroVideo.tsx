@@ -1,3 +1,4 @@
+import { BiLabel } from "../i18n/Ar"
 import { useEffect, useRef, useState } from "react"
 import { motion, useReducedMotion } from "motion/react"
 import { pickerLinkProps } from "./LoanTypePicker"
@@ -106,9 +107,9 @@ export function HeroVideo() {
             <a
               {...pickerLinkProps}
               data-testid="hero-apply"
-              className="inline-flex items-center justify-center rounded-full bg-[#3B2BBF] px-8 py-3.5 text-base font-semibold text-white shadow-[0_16px_40px_-12px_rgba(59,43,191,.95)] ring-1 ring-white/20 transition-transform hover:scale-[1.02] hover:bg-[#4a3bd6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="inline-flex items-center justify-center rounded-full bg-[#3B2BBF] px-8 py-2.5 text-base font-semibold text-white shadow-[0_16px_40px_-12px_rgba(59,43,191,.95)] ring-1 ring-white/20 transition-transform hover:scale-[1.02] hover:bg-[#4a3bd6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
-              Apply for Loan
+              <BiLabel en="Apply for Loan" arClass="!text-white/85" />
             </a>
             <a href="#loan-types" className="text-sm font-semibold text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
               Browse loan types

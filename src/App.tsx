@@ -5,6 +5,8 @@ import { APPLY_URL } from "./components/Header"
 import { WhyUs } from "./components/WhyUs"
 import { LoanTypePicker, pickerLinkProps } from "./components/LoanTypePicker"
 import { applyUrlFor, loanTypeById } from "./lib/loanTypes"
+import { BiLabel } from "./i18n/Ar"
+import { AR } from "./i18n/ar"
 import { SiteFooter } from "./components/SiteFooter"
 import { formatMoney, formatNumber, loanRange, useCurrency } from "./lib/currency"
 import houseImg from "./assets/3d/fluent-house.webp"
@@ -20,6 +22,8 @@ const loanTypes = [
   { title: "Business", key: "Business", desc: "Grow your company", img: briefcase, alt: "3D briefcase icon" },
   { title: "Education", key: "Education", desc: "School and training", img: gradCap, alt: "3D graduation cap icon" },
 ]
+
+const AR_APPLY = AR["Apply"]
 
 const steps = [
   { n: "01", t: "Choose a loan", d: "Pick mortgage, auto, personal, business or education." },
@@ -79,7 +83,7 @@ export default function App() {
                     <h3 className="mt-4 font-display text-lg font-bold text-slate-900">{l.title}</h3>
                     <p className="mt-1 text-sm text-slate-600">{l.desc}</p>
                     <AmountRange type={l.key} />
-                    <span className="mt-auto pt-4 text-sm font-semibold text-[#3B2BBF]">Apply →</span>
+                    <span className="mt-auto pt-4 text-sm font-semibold text-[#3B2BBF]"><span className="inline-flex flex-col items-center leading-tight"><span>Apply →</span><span lang="ar" dir="rtl" className="ar-sub block text-center">{AR_APPLY}</span></span></span>
                   </a>
                 </motion.li>
               ))}
@@ -114,9 +118,9 @@ export default function App() {
             <a
               {...pickerLinkProps}
               data-testid="cta-apply"
-              className="mt-6 inline-flex rounded-full bg-white px-8 py-3.5 text-base font-semibold text-[#3B2BBF] hover:bg-[#F3F0FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="mt-6 inline-flex rounded-full bg-white px-8 py-2.5 text-base font-semibold text-[#3B2BBF] hover:bg-[#F3F0FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
-              Apply for Loan
+              <BiLabel en="Apply for Loan" arClass="!text-[#3B2BBF]/80" />
             </a>
           </div>
         </section>
