@@ -3,6 +3,7 @@ import { LightHeader } from "./components/LightHeader"
 import { HeroCluster } from "./components/HeroCluster"
 import { APPLY_URL } from "./components/Header"
 import { Logo } from "./components/Logo"
+import { Reviews } from "./components/Reviews"
 import houseImg from "./assets/3d/thridy-house.webp"
 import carImg from "./assets/3d/thridy-car.webp"
 import moneyBag from "./assets/3d/fluent-money-bag.webp"
@@ -164,14 +165,23 @@ export default function App() {
                 </li>
               ))}
             </ol>
-            <div className="mt-12 text-center">
-              <a
-                href={APPLY_URL}
-                className="inline-flex rounded-full bg-[#3B2BBF] px-8 py-3.5 text-base font-semibold text-white shadow-[0_16px_40px_-14px_rgba(59,43,191,.85)] hover:bg-[#2f22a0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]"
-              >
-                Apply for Loan
-              </a>
-            </div>
+          </div>
+        </section>
+
+        {/* REVIEWS (sample data in src/data/reviews.ts) */}
+        <Reviews />
+
+        {/* FINAL CTA */}
+        <section aria-label="Apply" className="px-5 pb-20 sm:px-8">
+          <div className="mx-auto max-w-4xl rounded-[28px] bg-gradient-to-br from-[#4B3BDF] to-[#2A1D9E] px-6 py-10 text-center text-white shadow-[0_30px_60px_-30px_rgba(59,43,191,.8)] sm:px-12">
+            <h2 className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Ready to move forward?</h2>
+            <p className="mx-auto mt-2 max-w-lg text-white/80">Try the short demo application. It takes about three minutes.</p>
+            <a
+              href={APPLY_URL}
+              className="mt-6 inline-flex rounded-full bg-white px-8 py-3.5 text-base font-semibold text-[#3B2BBF] hover:bg-[#F3F0FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              Apply for Loan
+            </a>
           </div>
         </section>
       </main>

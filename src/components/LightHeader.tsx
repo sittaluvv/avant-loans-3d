@@ -12,6 +12,7 @@ export function LightHeader() {
           <a href="#loan-types" className="hover:text-[#3B2BBF]">Loans</a>
           <a href="#benefits" className="hover:text-[#3B2BBF]">Why Avant</a>
           <a href="#how" className="hover:text-[#3B2BBF]">How it works</a>
+          <a href="#reviews" className="hover:text-[#3B2BBF]">Reviews</a>
           <a href={APPLY_URL} className="hover:text-[#3B2BBF]">Apply</a>
         </nav>
         <a
