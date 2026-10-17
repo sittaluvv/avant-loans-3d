@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react"
 import { useReducedMotion } from "motion/react"
-import cardImg from "@/assets/3d/thridy-credit-card.webp"
-import houseImg from "@/assets/3d/thridy-house.webp"
-import carImg from "@/assets/3d/thridy-car.webp"
+import cardImg from "@/assets/3d/avant-card.webp"
+import houseImg from "@/assets/3d/fluent-house.webp"
+import carImg from "@/assets/3d/fluent-car.webp"
 import coinImg from "@/assets/3d/fluent-coin.webp"
 
 /** Floating 3D cluster: card + coins + house/car with CSS bob + pointer parallax. */
@@ -48,14 +48,14 @@ export function HeroCluster() {
         style={{ transformStyle: "preserve-3d" }}
       >
         <div className="bob-slow absolute top-[4%] left-[0%] w-[40%]" style={{ transform: "translateZ(-40px)" }}>
-          <img src={houseImg} alt="" width={512} height={512} className="w-full drop-shadow-2xl" />
+          <img src={houseImg} alt="" width={256} height={256} className="w-full drop-shadow-2xl" />
         </div>
         <div className="bob-slow bob-delay-2 absolute top-[12%] right-[-2%] w-[38%]" style={{ transform: "translateZ(-30px)" }}>
-          <img src={carImg} alt="" width={512} height={512} className="w-full drop-shadow-2xl" />
+          <img src={carImg} alt="" width={256} height={256} className="w-full drop-shadow-2xl" />
         </div>
 
         <div className="bob absolute top-[20%] left-[16%] w-[66%]" style={{ transform: "translateZ(40px)" }}>
-          <img src={cardImg} alt="" width={512} height={512} className="w-full rotate-[-12deg] drop-shadow-[0_30px_50px_rgba(59,43,191,.35)]" />
+          <img src={cardImg} alt="" width={1024} height={1024} className="w-full rotate-[-12deg] drop-shadow-[0_30px_50px_rgba(59,43,191,.35)]" />
         </div>
 
         <div className="bob-coin absolute top-[16%] right-[14%] w-[17%]">

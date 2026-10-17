@@ -4,8 +4,8 @@ import { HeroCluster } from "./components/HeroCluster"
 import { APPLY_URL } from "./components/Header"
 import { Logo } from "./components/Logo"
 import { Reviews } from "./components/Reviews"
-import houseImg from "./assets/3d/thridy-house.webp"
-import carImg from "./assets/3d/thridy-car.webp"
+import houseImg from "./assets/3d/fluent-house.webp"
+import carImg from "./assets/3d/fluent-car.webp"
 import moneyBag from "./assets/3d/fluent-money-bag.webp"
 import briefcase from "./assets/3d/fluent-briefcase.webp"
 import gradCap from "./assets/3d/fluent-grad-cap.webp"
@@ -85,7 +85,7 @@ export default function App() {
               <p className="mt-3 text-sm text-slate-500">Checking options won’t affect your credit score.</p>
             </div>
 
-            <figure className="relative" aria-label="3D illustration cluster: credit card, coins, house and car">
+            <figure className="relative" aria-label="3D artwork: credit card, coins, house and car">
               <HeroCluster />
               <figcaption className="sr-only">
                 Floating 3D credit card with gold coins, a house and a car, plus chips reading Approved in minutes and APR from 4.9 percent.
@@ -199,40 +199,6 @@ export default function App() {
               The application form is for demonstration; submitting it does not create a real application.
             </p>
           </div>
-        </div>
-
-        <div className="mx-auto mt-10 max-w-6xl rounded-2xl border border-slate-200 bg-slate-50 p-5 text-xs leading-relaxed text-slate-600">
-          <p className="font-semibold text-slate-800">Illustration credits</p>
-          <ul className="mt-2 space-y-1">
-            <li>
-              Credit Card icon by Thridy (
-              <a className="text-[#3B2BBF] underline-offset-2 hover:underline" href="https://thridy.com/credit-card-3d-icon" rel="noopener noreferrer" target="_blank">
-                https://thridy.com/credit-card-3d-icon
-              </a>
-              )
-            </li>
-            <li>
-              House icon by Thridy (
-              <a className="text-[#3B2BBF] underline-offset-2 hover:underline" href="https://thridy.com/house-3d-icon" rel="noopener noreferrer" target="_blank">
-                https://thridy.com/house-3d-icon
-              </a>
-              )
-            </li>
-            <li>
-              Car icon by Thridy (
-              <a className="text-[#3B2BBF] underline-offset-2 hover:underline" href="https://thridy.com/car-3d-icon" rel="noopener noreferrer" target="_blank">
-                https://thridy.com/car-3d-icon
-              </a>
-              )
-            </li>
-            <li>
-              Additional 3D emoji icons from{" "}
-              <a className="text-[#3B2BBF] underline-offset-2 hover:underline" href="https://github.com/microsoft/fluentui-emoji" rel="noopener noreferrer" target="_blank">
-                Microsoft Fluent Emoji
-              </a>{" "}
-              (MIT).
-            </li>
-          </ul>
         </div>
 
         <p className="mx-auto mt-8 max-w-6xl text-xs text-slate-500">

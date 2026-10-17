@@ -41,10 +41,7 @@ export default function ApplyPage() {
           </p>
         </div>
         <p className="mx-auto mt-6 max-w-6xl text-xs text-slate-500">
-          © 2026 Avant Loans Middle East. Demo site. 3D icons: House &amp; Car by{" "}
-          <a className="text-[#3B2BBF] hover:underline" href="https://thridy.com/house-3d-icon" target="_blank" rel="noopener noreferrer">Thridy</a>{" "}
-          (<a className="text-[#3B2BBF] hover:underline" href="https://thridy.com/car-3d-icon" target="_blank" rel="noopener noreferrer">car</a>), others from{" "}
-          <a className="text-[#3B2BBF] hover:underline" href="https://github.com/microsoft/fluentui-emoji" target="_blank" rel="noopener noreferrer">Microsoft Fluent Emoji</a> (MIT).
+          © 2026 Avant Loans Middle East. Demo site. Not affiliated with any real lender.
         </p>
       </footer>
     </div>
