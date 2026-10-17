@@ -7,6 +7,7 @@ import moneyBagImg from "../assets/3d/fluent-money-bag.webp"
 import briefcaseImg from "../assets/3d/fluent-briefcase.webp"
 import gradCapImg from "../assets/3d/fluent-grad-cap.webp"
 import { submitApplication, isLive } from "../lib/submit"
+import { IdUploads, IdPrivacyNote, ID_TYPES, checkIdFile, type IdFiles, type IdSide } from "./IdUpload"
 
 /*
  * Demo form: answers stay in memory until submit.
@@ -127,6 +128,17 @@ export function MortgageForm() {
   const formRef = useRef<HTMLFormElement>(null)
   const topRef = useRef<HTMLDivElement>(null)
   const set = (k: string, v: string) => setData((d) => ({ ...d, [k]: v }))
+  const [idFiles, setIdFiles] = useState<IdFiles>({})
+  const [idErrors, setIdErrors] = useState<Partial<Record<IdSide, string>>>({})
+  const setIdFile = (side: IdSide, f?: File) => {
+    if (f) {
+      const err = checkIdFile(f)
+      if (err) { setIdErrors((e) => ({ ...e, [side]: err })); return }
+    }
+    setIdErrors((e) => ({ ...e, [side]: undefined }))
+    setIdFiles((cur) => ({ ...cur, [side]: f }))
+  }
+  const todayIso = new Date().toISOString().slice(0, 10)
 
   const loanType = data["loan-type"] || ""
   const range = AMOUNT_RANGE[loanType] || AMOUNT_RANGE.Personal
@@ -163,12 +175,24 @@ export function MortgageForm() {
       const el = f.querySelector<HTMLInputElement>("#loan-amount")
       if (el) { el.setAttribute("aria-invalid", "true"); bad.push(el) }
     }
+    // ID documents (final step): front always, back unless passport
+    if (step === 2) {
+      const errs: Partial<Record<IdSide, string>> = {}
+      if (!idFiles.front) errs.front = data["id-type"] === "Passport" ? "Please upload your passport photo page." : "Please upload the front of your ID."
+      if (!idFiles.back && data["id-type"] && data["id-type"] !== "Passport") errs.back = "Please upload the back of your ID."
+      setIdErrors(errs)
+      for (const side of ["front", "back"] as IdSide[]) {
+        const el = f.querySelector<HTMLInputElement>(`#id-${side}`)
+        if (errs[side] && el) { el.setAttribute("aria-invalid", "true"); bad.push(el) }
+      }
+    }
     bad.forEach((el) => el.setAttribute("aria-invalid", "true"))
     const count = new Set(bad.map((el) => el.name || el.id)).size
     if (bad.length) {
       setError(`Please complete ${count === 1 ? "the highlighted field" : `the ${count} highlighted fields`} to continue.`)
-      bad[0].focus()
-      ;(bad[0] as HTMLInputElement).reportValidity?.()
+      const first = bad[0] as HTMLInputElement
+      if (first.type === "file") first.closest("[data-id-section]")?.scrollIntoView({ block: "center" })
+      else { first.focus(); first.reportValidity?.() }
       return false
     }
     setError("")
@@ -244,14 +268,14 @@ export function MortgageForm() {
           ...data,
           "loan-amount": amountNum ? `$${fmt.format(amountNum)}` : data["loan-amount"],
         }
-        const result = await submitApplication(snapshot)
+        const result = await submitApplication(snapshot, idFiles)
         setSending(false)
         if (isLive && !result.delivered) {
           setError(result.error ? `Could not deliver the application: ${result.error}` : "Could not deliver the application. Please try again.")
           return
         }
         setDelivered(result.delivered)
-        setData({}); setDone(true); scrollTop()
+        setData({}); setIdFiles({}); setIdErrors({}); setDone(true); scrollTop()
       }} className="glass-light rounded-[28px] p-5 sm:p-10">
         <h1 className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-extrabold leading-tight tracking-tight text-slate-900">Online Loan Application Form</h1>
         <p className="mt-3 max-w-2xl leading-relaxed text-slate-600">
@@ -442,6 +466,24 @@ export function MortgageForm() {
               {!loanType && (
                 <p className="py-6 text-slate-500">Go back to step 1 and choose a loan type.</p>
               )}
+
+              <div data-id-section className="border-t border-slate-100 pt-5">
+                <h2 className="font-display text-lg font-bold text-slate-900">Identity verification</h2>
+                <p className="mt-1 text-sm text-slate-600">Choose your ID type and upload a clear photo or scan.</p>
+              </div>
+              <Row label="ID type" groupId="g-id-type">
+                <Radios name="id-type" options={[...ID_TYPES]} data={data} set={set} labelledBy="g-id-type" />
+              </Row>
+              <Row label="ID number" htmlFor="id-number" hint="As shown on the document">
+                <Field id="id-number" label="ID number" data={data} set={set} autoComplete="off" spellCheck={false} maxLength={30} pattern="[A-Za-z0-9\- ]{4,30}" title="4–30 letters, numbers or dashes" />
+              </Row>
+              <Row label="Expiry date" htmlFor="id-expiry" hint="Must be a valid, unexpired ID">
+                <Field id="id-expiry" label="Expiry date" type="date" data={data} set={set} min={todayIso} max="2060-12-31" />
+              </Row>
+              <Row label="Upload ID" groupId="g-id-upload" hint={data["id-type"] === "Passport" ? "Photo page required; back optional" : "Front and back required"}>
+                <IdUploads idType={data["id-type"] || ""} files={idFiles} errors={idErrors} setFile={setIdFile} />
+                <IdPrivacyNote />
+              </Row>
 
               <Row label="Notes" htmlFor="notes" hint="Anything else we should know" optional>
                 <div>
