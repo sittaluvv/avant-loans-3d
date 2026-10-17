@@ -35,3 +35,21 @@ See `server/README.md`. Needs Ronald's bot token + chat id. Without
 `VITE_TELEGRAM_API_URL`, the form stays offline and shows "Nothing was sent."
 
 The old demo at `avant-loans-demo` (ronalddelagarzaaldaco-droid) is untouched.
+
+
+## Telegram Worker (live)
+URL: `https://avant-loans-telegram.sittaluvv.workers.dev`
+Secrets on the Worker (not in git): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
+CORS: `https://sittaluvv.github.io` only
+
+Redeploy site with delivery enabled:
+```bash
+cd /workspace/avant-3d
+VITE_TELEGRAM_API_URL=https://avant-loans-telegram.sittaluvv.workers.dev npm run build
+./scripts/publish-pages.sh
+```
+
+Redeploy Worker after code changes:
+```bash
+cd /workspace/avant-3d/server && ./deploy.sh
+```
