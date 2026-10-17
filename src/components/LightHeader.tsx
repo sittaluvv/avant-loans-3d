@@ -24,7 +24,7 @@ export function LightHeader({ overlay = false }: { overlay?: boolean }) {
           <Logo className="h-9 sm:h-11 lg:h-12" variant={dark ? "white" : "color"} />
         </a>
         <nav aria-label="Main" className={`hidden items-center gap-8 text-sm font-semibold md:flex ${dark ? "text-white/85" : "text-slate-600"}`}>
-          {[["#loan-types", "Loans"], ["#benefits", "Why Avant"], ["#how", "How it works"], ["#reviews", "Reviews"], [APPLY_URL, "Apply"]].map(([href, label]) => (
+          {[["#loan-types", "Loans"], ["#benefits", "Why Avant"], ["#how", "How it works"], ["#why-us", "Why us"], [APPLY_URL, "Apply"]].map(([href, label]) => (
             <a key={label} href={href} className={dark ? "hover:text-white" : "hover:text-[#3B2BBF]"}>{label}</a>
           ))}
         </nav>

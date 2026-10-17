@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from "motion/react"
 import { LightHeader } from "./components/LightHeader"
 import { HeroVideo } from "./components/HeroVideo"
 import { APPLY_URL } from "./components/Header"
-import { Reviews } from "./components/Reviews"
+import { WhyUs } from "./components/WhyUs"
 import { SiteFooter } from "./components/SiteFooter"
 import { formatMoney, formatNumber, loanRange, useCurrency } from "./lib/currency"
 import houseImg from "./assets/3d/fluent-house.webp"
@@ -135,8 +135,8 @@ export default function App() {
           </div>
         </section>
 
-        {/* REVIEWS (sample data in src/data/reviews.ts) */}
-        <Reviews />
+        {/* WHY US (honest feature list) */}
+        <WhyUs />
 
         {/* FINAL CTA */}
         <section aria-label="Apply" className="px-5 pb-20 sm:px-8">

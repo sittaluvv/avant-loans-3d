@@ -85,14 +85,6 @@ export function HeroVideo() {
 
       <div className="relative mx-auto w-full max-w-6xl px-5 pt-28 pb-14 sm:px-8 sm:pt-32 sm:pb-24">
         <div className="max-w-xl">
-          <motion.p
-            initial={reduced ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-sm sm:text-sm"
-          >
-            <span className="h-2 w-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]" />
-            Soft check · no credit score impact
-          </motion.p>
           <motion.h1
             id="hero-title"
             initial={reduced ? false : { opacity: 0, y: 16 }}

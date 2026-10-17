@@ -140,6 +140,7 @@ export function MortgageForm() {
   const topRef = useRef<HTMLDivElement>(null)
   const set = (k: string, v: string) => {
     document.getElementById(k)?.removeAttribute("aria-invalid") // clear the red state as soon as the field is edited
+    setError("")
     setData((d) => ({ ...d, [k]: v }))
   }
   const { code: currency } = useCurrency()

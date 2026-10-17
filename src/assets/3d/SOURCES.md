@@ -14,3 +14,8 @@ software/repo; no on-page credit is required).
 
 Removed 2026-10-17 (required attribution): thridy-credit-card, thridy-house, thridy-car, thridy-loan (Thridy,
 credit line required). pexels-coins-card.webp removed as unused. No Icons8 assets were ever shipped.
+
+Added 2026-10-17 for the "Why choose Avant Middle East" section (no attribution required):
+| fluent-speech-balloon.webp | Home "Why us" (WhatsApp or email) | Microsoft Fluent Emoji 3D "Speech balloon" | MIT |
+| fluent-cityscape.webp | Home "Why us" (based in Dubai) | Microsoft Fluent Emoji 3D "Cityscape" | MIT |
+| fluent-locked.webp | Home "Why us" (secure ID upload) | Microsoft Fluent Emoji 3D "Locked" | MIT |
