@@ -1,18 +1,23 @@
 @import "tailwindcss";
 @import "@fontsource-variable/unbounded";
 @import "@fontsource-variable/manrope";
+@import "@fontsource-variable/plus-jakarta-sans";
 
 @theme {
-  --font-display: "Unbounded Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans Variable", "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans Variable", "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
   --color-abyss: #030817;
   --color-navy: #071334;
   --color-deep: #0a1d4d;
-  --color-electric: #0d5bff;
-  --color-ion: #3d8bff;
-  --color-glow: #8fd3ff;
+  --color-electric: #3b2bbf;
+  --color-ion: #5b4dff;
+  --color-glow: #a5b4ff;
   --color-mist: #b8c4e0;
   --color-frost: #f2f6ff;
+  --color-indigo: #3b2bbf;
+  --color-mint: #34d399;
+  --color-gold: #f5c451;
+  --color-lavender: #f3f0ff;
 }
 
 html { scroll-behavior: smooth; scroll-padding-top: 96px; background: #ffffff; }
@@ -95,4 +100,35 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .mesh { animation: none; }
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+
+@keyframes bob-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes bob-float-slow {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-18px) rotate(-2deg); }
+}
+@keyframes bob-float-coin {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(8deg); }
+}
+.bob { animation: bob-float 5.5s ease-in-out infinite; }
+.bob-slow { animation: bob-float-slow 7s ease-in-out infinite; }
+.bob-coin { animation: bob-float-coin 4.2s ease-in-out infinite; }
+.bob-delay-1 { animation-delay: .4s; }
+.bob-delay-2 { animation-delay: .9s; }
+.bob-delay-3 { animation-delay: 1.3s; }
+@media (prefers-reduced-motion: reduce) {
+  .bob, .bob-slow, .bob-coin { animation: none !important; }
+}
+
+.glass-light {
+  background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.48));
+  border: 1px solid rgba(255,255,255,.7);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 18px 50px -28px rgba(59,43,191,.35), inset 0 1px 0 rgba(255,255,255,.8);
 }
