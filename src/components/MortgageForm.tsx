@@ -181,7 +181,13 @@ export function MortgageForm() {
   const ltv = value > 0 ? Math.round((computedLoan / value) * 100) : 0
 
   const stepLabels = useMemo(() => {
-    const third = loanType === "Mortgage" ? "Mortgage Details" : loanType ? `${loanType} Details` : "Loan Details"
+    const third = {
+      Mortgage: "Mortgage Details",
+      Personal: "Loan Details",
+      "Auto/Car": "Auto Loan Details",
+      Business: "Business Loan Details",
+      Education: "Education Loan Details",
+    }[loanType] || "Loan Details"
     return ["Personal Details", "Employment & Income", third] as const
   }, [loanType])
 
