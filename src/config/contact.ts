@@ -6,7 +6,7 @@
  */
 export const CONTACT = {
   whatsapp: "",
-  email: "",
+  email: "apply@avant-middle-east.com",
   /** Business phone shown in the footer (tel: link). Ronald-provided Dubai number. */
   phone: "+971501793501",
   phoneDisplay: "+971 50 179 3501",
