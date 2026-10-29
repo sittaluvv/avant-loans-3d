@@ -6,6 +6,10 @@
  */
 export const AR: Record<string, string> = {
   // Per-field validation messages
+  "On WhatsApp": "متاح على واتساب",
+  "Not available for WhatsApp": "غير متاح على واتساب",
+  "The number format looks wrong for this country code.": "تنسيق الرقم غير صحيح لرمز هذه الدولة.",
+  "Based on number format": "استنادًا إلى تنسيق الرقم",
   "Enter your first name": "أدخل اسمك الأول",
   "Enter your last name": "أدخل اسم العائلة",
   "Enter your street address": "أدخل عنوان الشارع",

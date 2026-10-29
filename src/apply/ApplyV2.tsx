@@ -1,3 +1,4 @@
+import { WhatsAppStatus } from "../components/WhatsAppStatus"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { ArrowLeft, ArrowRight, Check, Loader2, Pencil, ShieldCheck } from "lucide-react"
@@ -487,8 +488,10 @@ function ReviewScreen({ app, screens, edit, contactError, chooseContact }: {
                   <DialCodeCombobox size="lg" value={data["whatsapp-dial"] ?? "+966"} onChange={(v) => set("whatsapp-dial", v)} />
                   <input id="whatsapp-number" name="whatsapp-number" type="tel" inputMode="tel" autoComplete="tel-national" required pattern="[0-9][0-9 ]{5,15}" title="Digits only, without the country code"
                     placeholder="50 123 4567" value={data["whatsapp-number"] ?? ""} onChange={(e) => set("whatsapp-number", e.target.value.replace(/[^\d ]/g, ""))}
-                    className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-[15px] tabular-nums placeholder:text-slate-400 focus:border-[#3B2BBF] focus:ring-4 focus:ring-[#3B2BBF]/15 focus:outline-none aria-[invalid=true]:border-rose-400" />
+                    className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-[15px] tabular-nums placeholder:text-slate-400 focus:border-[#3B2BBF] focus:ring-4 focus:ring-[#3B2BBF]/15 focus:outline-none aria-[invalid=true]:border-rose-400" aria-describedby="whatsapp-status" />
                 </div>
+                <FieldError id="whatsapp-number" className="!mt-0" />
+                <WhatsAppStatus dial={data["whatsapp-dial"] ?? "+966"} number={data["whatsapp-number"] ?? ""} />
               </div>
             ) : (
               <div className="grid gap-2 pt-4">

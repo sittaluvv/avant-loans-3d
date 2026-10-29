@@ -8,6 +8,7 @@ import { IdUploads, IdPrivacyNote, ID_TYPES } from "./IdUpload"
 import { Ar } from "../i18n/Ar"
 import { DurationInput } from "./DurationInput"
 import { DialCodeCombobox } from "./DialCodeCombobox"
+import { WhatsAppStatus } from "./WhatsAppStatus"
 import { CountryCombobox } from "./CountryCombobox"
 import { AR, ar as ar_ } from "../i18n/ar"
 import { FloatInput } from "../apply/fields"
@@ -439,10 +440,11 @@ export function MortgageForm() {
                             <input id="whatsapp-number" name="whatsapp-number" type="tel" inputMode="tel" autoComplete="tel-national" required
                               pattern="[0-9][0-9 ]{5,15}" title="Digits only, without the country code"
                               placeholder="50 123 4567" value={data["whatsapp-number"] ?? ""} onChange={(e) => set("whatsapp-number", e.target.value.replace(/[^\d ]/g, ""))}
-                              aria-describedby={describedBy(app.fieldErrors["whatsapp-number"] && errId("whatsapp-number"))}
+                              aria-describedby={describedBy(app.fieldErrors["whatsapp-number"] && errId("whatsapp-number"), "whatsapp-status")}
                               className={inputCls + " tabular-nums"} />
                           </div>
                           <FieldError id="whatsapp-number" className="!mt-0" />
+                          <WhatsAppStatus dial={data["whatsapp-dial"] ?? "+966"} number={data["whatsapp-number"] ?? ""} />
                         </div>
                       ) : (
                         <div className="grid gap-2 pt-1 sm:max-w-md">
