@@ -96,7 +96,7 @@ export default function V2App() {
                 <BadgeCheck aria-hidden className="mt-0.5 h-4 w-4 flex-none text-[#3B2BBF]" /> {COMPANY_LINE.replace(/\.$/, "")}
               </p>
               <div className="mt-7">
-                <p className="text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase">Or start with</p>
+                <p className="text-xs font-semibold tracking-[0.14em] text-slate-600 uppercase">Or start with</p>
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {LOAN_TYPE_LIST.map((t) => (
                     <li key={t.slug}>
@@ -121,7 +121,7 @@ export default function V2App() {
           <div className="mx-auto max-w-6xl">
             <motion.div {...rise(reduced)} className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-sm font-semibold tracking-[0.14em] text-[#2F6BFF] uppercase">Loans</p>
+                <p className="text-sm font-semibold tracking-[0.14em] text-[#3B2BBF] uppercase">Loans</p>
                 <h2 id="v2-loans-title" className="mt-2 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">A loan for what's next</h2>
               </div>
               <p className="max-w-md text-slate-600">Choose a product to start. Each one opens the application with your choice already selected.</p>
@@ -149,7 +149,7 @@ export default function V2App() {
         <section id="how" tabIndex={-1} aria-labelledby="v2-how-title" className="outline-none scroll-mt-24 bg-[#F7F5FF] px-5 py-16 sm:px-8 sm:py-24">
           <div className="mx-auto max-w-6xl">
             <motion.div {...rise(reduced)} className="text-center">
-              <p className="text-sm font-semibold tracking-[0.14em] text-[#2F6BFF] uppercase">How it works</p>
+              <p className="text-sm font-semibold tracking-[0.14em] text-[#3B2BBF] uppercase">How it works</p>
               <h2 id="v2-how-title" className="mt-2 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">Three clear steps</h2>
             </motion.div>
             <ol className="relative mt-12 grid gap-5 md:grid-cols-3 md:gap-6">
@@ -182,7 +182,7 @@ export default function V2App() {
         <section id="faq" tabIndex={-1} aria-labelledby="v2-faq-title" className="outline-none scroll-mt-24 px-5 pb-16 sm:px-8 sm:pb-24">
           <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-14">
             <motion.div {...rise(reduced)}>
-              <p className="text-sm font-semibold tracking-[0.14em] text-[#2F6BFF] uppercase">FAQ</p>
+              <p className="text-sm font-semibold tracking-[0.14em] text-[#3B2BBF] uppercase">FAQ</p>
               <h2 id="v2-faq-title" className="mt-2 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">Questions, answered</h2>
               <p className="mt-3 max-w-sm text-slate-600">Straight answers about applying, documents, currencies and how we get in touch.</p>
               <div className="mt-6"><ContactOptions /></div>

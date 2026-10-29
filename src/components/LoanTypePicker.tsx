@@ -43,11 +43,11 @@ export function LoanTypePicker({ showRanges = true, applyUrl = APPLY_URL }: { sh
         <div aria-hidden className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200 sm:hidden" />
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 id="loan-picker-title" className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Choose your loan type<Ar en="Choose your loan type" className="mt-0.5 text-[0.55em] font-medium tracking-normal" /></h2>
+            <h2 id="loan-picker-title" className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Choose your loan type<Ar en="Choose your loan type" className="mt-0.5 text-[max(0.55em,14px)] font-medium tracking-normal" /></h2>
             <p className="mt-1 text-sm text-slate-600">Pick one to start your application. You can change it later.</p>
           </div>
           <button type="button" onClick={close} aria-label="Close"
-            className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:border-[#3B2BBF]/40 hover:text-[#3B2BBF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">
+            className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-[#62748e] text-slate-600 hover:border-[#3B2BBF]/40 hover:text-[#3B2BBF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">
             <X aria-hidden className="h-5 w-5" />
           </button>
         </div>

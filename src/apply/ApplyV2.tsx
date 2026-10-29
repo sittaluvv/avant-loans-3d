@@ -7,6 +7,7 @@ import { CurrencySelect } from "../components/CurrencySelect"
 import { DurationInput } from "../components/DurationInput"
 import { DialCodeCombobox } from "../components/DialCodeCombobox"
 import { CountryCombobox } from "../components/CountryCombobox"
+import { FieldError, FieldErrorsContext } from "../components/FieldError"
 import { ID_TYPES } from "../components/IdUpload"
 import { Ar } from "../i18n/Ar"
 import { AR } from "../i18n/ar"
@@ -157,7 +158,7 @@ export default function ApplyV2() {
                       {state === "done" ? <Check className="h-4 w-4" strokeWidth={3} /> : i + 1}
                     </span>
                     <span className={`min-w-0 text-sm leading-tight ${state === "current" ? "font-bold text-white" : state === "done" ? "font-medium text-white/90" : "text-white/75"}`}>
-                      {s.short}<Ar en={s.short} inline className="ml-2 !text-[11px] !text-white/70" />
+                      {s.short}<Ar en={s.short} inline className="ml-2 !text-white/70" />
                       <span className="sr-only">{state === "done" ? " (completed)" : state === "current" ? " (current step)" : ""}</span>
                     </span>
                   </button>
@@ -186,7 +187,7 @@ export default function ApplyV2() {
           {!done && <dl data-testid="live-summary" className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 border-t border-white/10 pt-4 text-sm">
             {summary.map(([k, v]) => (
               <div key={k} className="contents">
-                <dt className="text-white/75">{k}<Ar en={k} inline className="ml-1.5 !text-[10.5px] !text-white/70" /></dt>
+                <dt className="text-white/75">{k}<Ar en={k} inline className="ml-1.5 !text-white/70" /></dt>
                 <dd data-testid={`sum-${k.toLowerCase().replace(/\s/g, "-")}`} className="min-w-0 truncate text-right font-semibold tabular-nums">{v ?? <span className="font-normal text-white/60">—</span>}</dd>
               </div>
             ))}
@@ -235,7 +236,7 @@ export default function ApplyV2() {
         <FloatInput id="city" label="City" autoComplete="address-level2" value={data.city ?? ""} onChange={(v) => set("city", v)} />
         <FloatInput id="region" label="Region" autoComplete="address-level1" value={data.region ?? ""} onChange={(v) => set("region", v)} />
         <FloatInput id="postal" label="Postal / Zip Code" autoComplete="postal-code" maxLength={12} value={data.postal ?? ""} onChange={(v) => set("postal", v)} />
-        <CountryCombobox floating value={data.country ?? ""} onChange={(v) => set("country", v)} />
+        <div className="min-w-0"><CountryCombobox floating value={data.country ?? ""} onChange={(v) => set("country", v)} /><FieldError id="country" /></div>
       </div>
     </>,
     /* 3 work */ <>
@@ -293,7 +294,7 @@ export default function ApplyV2() {
             className="peer min-h-[112px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 pt-7 pb-2 text-[15px] text-slate-900 transition-[border-color,box-shadow] hover:border-[#3B2BBF]/35 focus:border-[#3B2BBF] focus:ring-4 focus:ring-[#3B2BBF]/15 focus:outline-none" />
           <label htmlFor="notes" className="pointer-events-none absolute top-2.5 left-4 text-xs font-medium text-slate-500 peer-focus:text-[#3B2BBF]">Notes <span className="font-normal">(optional)</span></label>
         </div>
-        <Ar text={`${AR.Notes} ${AR["(optional)"]}`} className="mt-1 px-1 text-[12.5px]" />
+        <Ar text={`${AR.Notes} ${AR["(optional)"]}`} className="mt-1 px-1" />
         <p className="mt-0.5 px-1 text-xs text-slate-500">Anything else we should know</p>
       </div>
     </>,
@@ -334,8 +335,8 @@ export default function ApplyV2() {
             <CurrencySelect dark />
           </div>
           <div className="mt-2.5 flex items-end justify-between gap-3">
-            <p className="min-w-0 text-sm font-bold leading-tight">{done ? "Enquiry sent" : S.short}{!done && <Ar en={S.short} inline className="ml-2 !text-[11px] !text-white/75" />}</p>
-            <p data-testid="mobile-step" className="flex-none text-xs font-semibold tabular-nums text-white/85">{done ? "" : `Step ${screen + 1} of ${screens.length}`}{!done && <Ar en={`Step ${screen + 1} of ${screens.length}`} inline className="ml-1.5 !text-[10.5px] !text-white/75" />}</p>
+            <p className="min-w-0 text-sm font-bold leading-tight">{done ? "Enquiry sent" : S.short}{!done && <Ar en={S.short} inline className="ml-2 !text-white/75" />}</p>
+            <p data-testid="mobile-step" className="flex-none text-xs font-semibold tabular-nums text-white/85">{done ? "" : `Step ${screen + 1} of ${screens.length}`}{!done && <Ar en={`Step ${screen + 1} of ${screens.length}`} inline className="ml-1.5 !text-white/75" />}</p>
           </div>
           <div aria-hidden className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
             <motion.div className="h-full rounded-full bg-gradient-to-r from-[#8FB0FF] to-white" initial={false} animate={{ width: `${Math.max(6, (done ? 1 : (screen + 1) / screens.length) * 100)}%` }} transition={{ duration: reduced ? 0 : 0.45 }} />
@@ -358,6 +359,7 @@ export default function ApplyV2() {
           {done ? (
             <Success delivered={delivered} onRestart={restart} headRef={headRef} reduced={!!reduced} />
           ) : (
+            <FieldErrorsContext.Provider value={app.fieldErrors}>
             <form ref={formRef} noValidate onSubmit={onSubmit} onKeyDown={onKeyDown} className="p-5 sm:p-9 lg:p-10">
               <div className="flex items-start gap-4">
                 <div className="hidden sm:block"><Ring value={progress} label={`${Math.round(progress * 100)}% complete`} /></div>
@@ -365,7 +367,7 @@ export default function ApplyV2() {
                   <p className="hidden text-xs font-semibold tracking-wide text-[#3B2BBF] uppercase sm:block">Step {screen + 1} of {screens.length}<Ar en={`Step ${screen + 1} of ${screens.length}`} inline className="ml-2 tracking-normal normal-case" /></p>
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div key={screen} initial={reduced ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={reduced ? undefined : { opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
-                      <h2 ref={headRef} tabIndex={-1} className="font-display sm:mt-1 text-[clamp(1.5rem,3.2vw,2.1rem)] leading-tight font-extrabold tracking-tight text-slate-900 outline-none">{S.title}<Ar en={S.title} className="mt-0.5 !text-[0.5em] font-medium tracking-normal" /></h2>
+                      <h2 ref={headRef} tabIndex={-1} className="font-display sm:mt-1 text-[clamp(1.5rem,3.2vw,2.1rem)] leading-tight font-extrabold tracking-tight text-slate-900 outline-none">{S.title}<Ar en={S.title} className="mt-0.5 !text-[max(0.5em,14px)] font-medium tracking-normal" /></h2>
                       <p className="mt-1.5 text-[15px] text-slate-600">{S.sub}<Ar en={S.sub} className="mt-0.5" /></p>
                     </motion.div>
                   </AnimatePresence>
@@ -402,9 +404,10 @@ export default function ApplyV2() {
               </div>
               <p className="mt-6 hidden items-center justify-center gap-2 text-center text-xs text-slate-500 lg:flex"><ShieldCheck aria-hidden className="h-4 w-4 flex-none text-emerald-600" /><span>Your details are sent over an encrypted connection.<Ar en="Your details are sent over an encrypted connection." className="text-center" /></span></p>
             </form>
+            </FieldErrorsContext.Provider>
           )}
         </div>
-        <p className="relative mx-auto mt-6 max-w-[760px] px-2 text-[11px] leading-relaxed text-slate-500 lg:hidden"><span className="font-semibold text-slate-600">{COMPANY_LINE}</span> {REGULATORY_LINE}</p>
+        <p className="relative mx-auto mt-6 max-w-[760px] px-2 text-[11px] leading-relaxed text-slate-600 lg:hidden"><span className="font-semibold text-slate-600">{COMPANY_LINE}</span> {REGULATORY_LINE}</p>
       </main>
     </div>
   )
@@ -434,16 +437,16 @@ function ReviewScreen({ app, screens, edit, contactError, chooseContact }: {
       {sections.map(([i, rows]) => (
         <section key={i} aria-labelledby={`rv-${i}`} className="min-w-0 rounded-2xl border border-[#3B2BBF]/12 bg-[linear-gradient(180deg,#FBFAFF,#F5F3FF)] p-4">
           <div className="flex items-start justify-between gap-2">
-            <h3 id={`rv-${i}`} className="font-display text-sm font-bold text-[#3B2BBF]">{screens[i].short}<Ar en={screens[i].short} className="!font-sans !text-[11px] font-medium" /></h3>
+            <h3 id={`rv-${i}`} className="font-display text-sm font-bold text-[#3B2BBF]">{screens[i].short}<Ar en={screens[i].short} className="!font-sans font-medium" /></h3>
             <button type="button" onClick={() => edit(i)} data-testid={`edit-${i}`} aria-label={`Edit ${screens[i].title}`}
               className={`inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold leading-tight text-[#3B2BBF] ring-1 ring-[#3B2BBF]/20 hover:bg-[#F3F0FF] ${focusRing}`}>
-              <Pencil aria-hidden className="h-3 w-3" /><span>Edit<Ar en="Edit" className="text-center !text-[10.5px]" /></span>
+              <Pencil aria-hidden className="h-3 w-3" /><span>Edit<Ar en="Edit" className="text-center" /></span>
             </button>
           </div>
           <dl className="mt-2 grid gap-1.5 text-sm">
             {rows.map(([k, v]) => (
               <div key={k} className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)] gap-2">
-                <dt className="text-slate-600">{k}<Ar en={k} className="!text-[10.5px]" /></dt>
+                <dt className="text-slate-600">{k}<Ar en={k} /></dt>
                 <dd className="min-w-0 font-semibold break-words text-slate-900">{v || "—"}</dd>
               </div>
             ))}
@@ -466,7 +469,7 @@ function ReviewScreen({ app, screens, edit, contactError, chooseContact }: {
                 {m === "WhatsApp" && <span className="absolute -right-1 -bottom-1 h-4 w-4 rounded-full border-2 border-white bg-[#25D366]" />}
               </span>
               <span className={`font-display text-[15px] font-semibold ${on ? "text-[#3B2BBF]" : "text-slate-900"}`}>{m}<Ar en={m} className="text-center" /></span>
-              <span className="text-xs text-slate-500">{sub}<Ar en={sub} className="text-center !text-[10.5px]" /></span>
+              <span className="text-xs text-slate-500">{sub}<Ar en={sub} className="text-center" /></span>
               {on && <span aria-hidden className="absolute top-2.5 right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#3B2BBF] text-white"><Check className="h-3 w-3" strokeWidth={3} /></span>}
             </label>
           )
@@ -522,7 +525,7 @@ function Success({ delivered, onRestart, headRef, reduced }: { delivered: boolea
         <motion.img src={delivered ? checkImg : memoImg} alt="" width={256} height={256} initial={reduced ? false : { scale: 0.3, rotate: -20, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 240, damping: 14 }} className="float-tilt relative h-28 w-28 object-contain drop-shadow-[0_22px_24px_rgba(16,120,80,.35)]" />
       </div>
-      <h2 ref={headRef} tabIndex={-1} className="relative mt-7 font-display text-2xl font-extrabold text-slate-900 outline-none sm:text-3xl">{SUCCESS_COPY.title(delivered)}<Ar en={SUCCESS_COPY.title(delivered)} className="mt-1 text-center !text-[0.6em] font-medium" /></h2>
+      <h2 ref={headRef} tabIndex={-1} className="relative mt-7 font-display text-2xl font-extrabold text-slate-900 outline-none sm:text-3xl">{SUCCESS_COPY.title(delivered)}<Ar en={SUCCESS_COPY.title(delivered)} className="mt-1 text-center !text-[max(0.6em,14px)] font-medium" /></h2>
       <p className="relative mx-auto mt-4 max-w-lg leading-relaxed text-slate-600">{SUCCESS_COPY.body(delivered)}<Ar en={SUCCESS_COPY.body(delivered)} className="mt-2 text-center" /></p>
       <button type="button" onClick={onRestart} className={`relative mt-8 rounded-full border border-[#3B2BBF]/30 px-6 py-3 text-sm font-semibold text-[#3B2BBF] hover:bg-[#3B2BBF]/5 ${focusRing}`}>Start a new enquiry<Ar en="Start a new enquiry" className="text-center" /></button>
     </div>

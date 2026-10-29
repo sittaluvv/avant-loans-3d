@@ -16,7 +16,7 @@ const set = (ext: string, ws: number[], phone = false) => ws.map((w) => `${B}-${
 export function HeroPhoto() {
   const reduced = useReducedMotion()
   return (
-    <section aria-labelledby="hero-title" className="relative isolate flex overflow-hidden bg-[#120d33] lg:min-h-[min(88svh,820px)] lg:items-center">
+    <section aria-labelledby="hero-title" className="dark-surface relative isolate flex overflow-hidden bg-[#120d33] lg:min-h-[min(88svh,820px)] lg:items-center">
       <div aria-hidden className="absolute inset-x-0 top-0 -z-20 h-[460px] overflow-hidden sm:h-[620px] lg:inset-y-0 lg:left-[18%] lg:right-0 lg:h-auto 2xl:left-[24%]">
         <picture>
           <source media={PHONE} type="image/avif" srcSet={set("avif", [520, 780, 1170], true)} sizes="100vw" />
@@ -71,7 +71,7 @@ export function HeroPhoto() {
             >
               <BiLabel en="Apply for Loan" arClass="!text-white/85" />
             </a>
-            <a href="#loan-types" className="text-sm font-semibold text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+            <a href="#loan-types" className="-mx-2 inline-flex min-h-11 items-center px-2 text-sm font-semibold text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
               Browse loan types
             </a>
           </div>

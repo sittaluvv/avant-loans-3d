@@ -10,6 +10,8 @@ import { DurationInput } from "./DurationInput"
 import { DialCodeCombobox } from "./DialCodeCombobox"
 import { CountryCombobox } from "./CountryCombobox"
 import { AR, ar as ar_ } from "../i18n/ar"
+import { FloatInput } from "../apply/fields"
+import { FieldError, FieldErrorsContext, describedBy, errId, useFieldError } from "./FieldError"
 
 /* Presentation for /apply/. All business logic (fields, rules, validation, snapshot, submit) is in lib/application.ts,
  * shared with /apply-v2/. */
@@ -21,10 +23,11 @@ export { preferredContactOf }
 
 const fmt = new Intl.NumberFormat("en-US")
 
+/* H1: rest border slate-500 #62748e (4.76:1), focus accent #3B2BBF (9.2:1). C2: invalid border rose-600 #e7000b (≈4.6:1). */
 const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 shadow-[0_1px_2px_rgba(15,23,42,.04)] transition-[border-color,box-shadow] " +
-  "hover:border-[#3B2BBF]/35 focus:border-[#3B2BBF] focus:outline-none focus:ring-4 focus:ring-[#3B2BBF]/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF] " +
-  "aria-[invalid=true]:border-rose-400 aria-[invalid=true]:ring-rose-200 [color-scheme:light]"
+  "w-full rounded-xl border border-[#62748e] bg-white px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,.04)] transition-[border-color,box-shadow] " +
+  "hover:border-[#3B2BBF] focus:border-[#3B2BBF] focus:outline-none focus:ring-2 focus:ring-[#3B2BBF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF] " +
+  "aria-[invalid=true]:border-[#e7000b] aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-[#e7000b]/25 aria-[invalid=true]:focus:ring-[#e7000b] [color-scheme:light]"
 
 function Row({ label, htmlFor, children, hint, groupId, optional }: { label: string; htmlFor?: string; children: ReactNode; hint?: string; groupId?: string; optional?: boolean }) {
   return (
@@ -42,46 +45,44 @@ function Row({ label, htmlFor, children, hint, groupId, optional }: { label: str
   )
 }
 
-function Field({ id, label, data, set, type = "text", optional, noAr, ...rest }: {
-  id: string; label: string; data: Data; set: (k: string, v: string) => void; type?: string; optional?: boolean; noAr?: boolean
-} & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <div>
-      <label htmlFor={id} className="sr-only">{label}</label>
-      <input id={id} name={id} type={type} placeholder={label + (optional ? " (optional)" : "")} required={!optional}
-        value={data[id] ?? ""} onChange={(e) => set(id, e.target.value)} className={inputCls} {...rest} />
-      {!noAr && <Ar en={label} text={AR[label] && (optional ? `${AR[label]} ${AR["(optional)"]}` : AR[label])} className="mt-1 px-1 text-[13px]" />}
-    </div>
-  )
+/** C1: persistent floating label (shared FloatInput from /apply-v2) instead of a placeholder-only label. Error text below (C2). */
+function Field({ id, label, data, set, type = "text", optional, noAr, prefix, hint, ...rest }: {
+  id: string; label: string; data: Data; set: (k: string, v: string) => void; type?: string; optional?: boolean; noAr?: boolean; prefix?: string; hint?: string
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type" | "prefix">) {
+  return <FloatInput id={id} label={label} type={type} optional={optional} noAr={noAr} prefix={prefix} hint={hint}
+    value={data[id] ?? ""} onChange={(v) => set(id, v)} {...rest} />
 }
 
 function Select({ id, label, options, data, set, placeholder, caption }: { id: string; label: string; options: string[]; data: Data; set: (k: string, v: string) => void; placeholder: string; caption?: boolean }) {
+  const err = useFieldError(id)
   return (
     <div className="relative">
       <label htmlFor={id} className="sr-only">{label}</label>
-      <select id={id} name={id} required value={data[id] ?? ""} onChange={(e) => set(id, e.target.value)}
-        className={`${inputCls} appearance-none pr-10 ${data[id] ? "" : "text-slate-400"}`}>
+      <select id={id} name={id} required value={data[id] ?? ""} onChange={(e) => set(id, e.target.value)} aria-describedby={describedBy(err && errId(id))}
+        className={`${inputCls} appearance-none pr-10 ${data[id] ? "" : "text-slate-500"}`}>
         <option value="" disabled>{placeholder}</option>
         {options.map((o) => <option key={o} value={o} className="bg-white text-slate-900">{o}</option>)}
       </select>
-      <ChevronDown aria-hidden className="pointer-events-none absolute top-[1.55rem] right-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <ChevronDown aria-hidden className="pointer-events-none absolute top-[1.55rem] right-3 h-4 w-4 -translate-y-1/2 text-slate-500" />
       {/* Arabic of what the box shows: the chosen option, else the placeholder (Country: its label) */}
-      <Ar en={data[id] || (caption ? label : placeholder)} className="mt-1 px-1 text-[13px]" />
+      <FieldError id={id} />
+      <Ar en={data[id] || (caption ? label : placeholder)} className="mt-1 px-1" />
     </div>
   )
 }
 
 function Radios({ name, options, data, set, labelledBy, cols = 1 }: { name: string; options: string[]; data: Data; set: (k: string, v: string) => void; labelledBy: string; cols?: number }) {
-  return (
-    <div role="radiogroup" aria-labelledby={labelledBy} className={`grid gap-2.5 ${cols === 2 ? "sm:grid-cols-2" : ""}`}>
+  const err = useFieldError(name)
+  return (<div>
+    <div role="radiogroup" aria-labelledby={labelledBy} aria-describedby={describedBy(err && errId(name))} className={`grid gap-2.5 ${cols === 2 ? "sm:grid-cols-2" : ""}`}>
       {options.map((o, i) => {
         const id = `${name}-${i}`
         const on = data[name] === o
         return (
           <label key={o} htmlFor={id}
-            className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-[15px] transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#3B2BBF] has-[[aria-invalid=true]]:border-rose-400 ${on ? "border-[#3B2BBF] bg-[#3B2BBF]/[.06] text-slate-900 shadow-[0_8px_24px_-16px_rgba(59,43,191,.7)]" : "border-slate-200 bg-white text-slate-600 hover:border-[#3B2BBF]/40 hover:text-slate-900"}`}>
+            className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-[15px] transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#3B2BBF] has-[[aria-invalid=true]]:border-[#e7000b] ${on ? "border-[#3B2BBF] bg-[#3B2BBF]/[.06] text-slate-900 shadow-[0_8px_24px_-16px_rgba(59,43,191,.7)]" : "border-[#62748e] bg-white text-slate-700 hover:border-[#3B2BBF] hover:text-slate-900"}`}>
             <input id={id} type="radio" name={name} value={o} checked={on} required={i === 0} onChange={() => set(name, o)} className="peer sr-only" />
-            <span aria-hidden className={`flex h-5 w-5 flex-none items-center justify-center rounded-full border ${on ? "border-[#3B2BBF] bg-[#3B2BBF]" : "border-slate-300 bg-white"}`}>
+            <span aria-hidden className={`flex h-5 w-5 flex-none items-center justify-center rounded-full border ${on ? "border-[#3B2BBF] bg-[#3B2BBF]" : "border-[#62748e] bg-white"}`}>
               {on && <span className="h-2 w-2 rounded-full bg-white" />}
             </span>
             <span className="min-w-0">{o}<Ar en={o} /></span>
@@ -89,7 +90,8 @@ function Radios({ name, options, data, set, labelledBy, cols = 1 }: { name: stri
         )
       })}
     </div>
-  )
+    <FieldError id={name} />
+  </div>)
 }
 
 export function MortgageForm() {
@@ -105,6 +107,7 @@ export function MortgageForm() {
     data, set, currency, error, setError, sending, done, delivered, contactError, chooseContact, empKind, setEmployment,
     idFiles, idErrors, setIdFile, todayIso, loanType, range, months, amountNum, chooseLoanType, typeLocked, setTypeLocked, loanTypeError, setAmount,
   } = app
+  const amountErr = app.fieldErrors["loan-amount"]
   const validate = () => app.validate(formRef.current!, { loanType: step === 0, id: step === 2, contact: step === 2 })
   const scrollTop = () => topRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" })
   const next = () => { if (validate()) { setStep((s) => s + 1); scrollTop() } }
@@ -116,10 +119,10 @@ export function MortgageForm() {
     return (
       <motion.div ref={topRef} role="status" initial={reduced ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="glass-light scroll-mt-28 rounded-[28px] p-8 text-center sm:p-12">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#34D399] text-white shadow-[0_12px_32px_-8px_rgba(52,211,153,.8)]"><Check aria-hidden className="h-8 w-8" /></div>
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#059669] text-white shadow-[0_12px_32px_-8px_rgba(5,150,105,.7)]"><Check aria-hidden className="h-8 w-8" /></div>
         <h2 className="mt-6 font-display text-2xl font-extrabold text-slate-900 sm:text-3xl">
           {SUCCESS_COPY.title(delivered)}
-          <Ar en={SUCCESS_COPY.title(delivered)} className="mt-1 text-center text-[0.62em] font-medium" />
+          <Ar en={SUCCESS_COPY.title(delivered)} className="mt-1 text-center text-[max(0.62em,14px)] font-medium" />
         </h2>
         <p className="mx-auto mt-4 max-w-lg leading-relaxed text-slate-600">
           {SUCCESS_COPY.body(delivered)}
@@ -132,6 +135,7 @@ export function MortgageForm() {
   }
 
   return (
+    <FieldErrorsContext.Provider value={app.fieldErrors}>
     <div ref={topRef} className="scroll-mt-28">
       <nav aria-label="Application progress" className="mb-8">
         <ol className="grid grid-cols-3 gap-2">
@@ -143,9 +147,9 @@ export function MortgageForm() {
                   <motion.div className="h-full rounded-full bg-gradient-to-r from-[#3B2BBF] to-[#5B4DFF]"
                     initial={false} animate={{ width: state === "todo" ? "0%" : "100%" }} transition={{ duration: reduced ? 0 : 0.5 }} />
                 </div>
-                <p className={`mt-3 hidden items-start gap-2 text-sm sm:flex ${state === "todo" ? "text-slate-400" : "font-semibold text-slate-900"}`}>
-                  <span className={`font-display tabular-nums ${state === "current" ? "text-[#3B2BBF]" : ""}`}>{state === "done" ? <Check aria-label="completed" className="inline h-4 w-4 text-[#34D399]" /> : `0${i + 1}.`}</span>
-                  <span className="min-w-0">{s}<Ar en={s} className={state === "todo" ? "opacity-80" : ""} /></span>
+                <p className={`mt-3 hidden items-start gap-2 text-sm sm:flex ${state === "todo" ? "text-slate-600" : "font-semibold text-slate-900"}`}>
+                  <span className={`font-display tabular-nums ${state === "current" ? "text-[#3B2BBF]" : ""}`}>{state === "done" ? <Check aria-label="completed" className="inline h-4 w-4 text-[#047857]" /> : `0${i + 1}.`}</span>
+                  <span className="min-w-0">{s}<Ar en={s} /></span>
                 </p>
                 <span className="sr-only sm:hidden">{`0${i + 1}. ${s}${state === "done" ? " (completed)" : ""}`}</span>
               </li>
@@ -164,7 +168,7 @@ export function MortgageForm() {
         if (!validate() || sending) return
         if (await app.submit()) scrollTop()
       }} className="glass-light rounded-[28px] p-5 sm:p-10">
-        <h1 className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-extrabold leading-tight tracking-tight text-slate-900">Online Loan Application Form<Ar en="Online Loan Application Form" className="mt-1 text-[0.5em] font-medium tracking-normal" /></h1>
+        <h1 className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-extrabold leading-tight tracking-tight text-slate-900">Online Loan Application Form<Ar en="Online Loan Application Form" className="mt-1 text-[max(0.5em,14px)] font-medium tracking-normal" /></h1>
         <p className="mt-3 max-w-2xl leading-relaxed text-slate-600">
           Please fill in our application form. All fields marked <span className="text-[#3B2BBF]">*</span> are required so our team can review your enquiry.
           <Ar en="Please fill in our application form. All fields marked * are required so our team can review your enquiry." className="mt-1" />
@@ -184,9 +188,9 @@ export function MortgageForm() {
                   <div data-testid="loan-type-chip" className="inline-flex w-fit items-center gap-2.5 rounded-[22px] border border-[#3B2BBF]/25 bg-[#3B2BBF]/[.06] py-1.5 pr-1.5 pl-2 text-sm">
                     <img src={loanImg(loanType)} alt="" width={256} height={256} className="h-7 w-7 object-contain" />
                     <span className="font-semibold leading-tight text-[#3B2BBF]">{loanTypeById(loanType)?.label ?? loanType}<Ar en={loanType} /></span>
-                    <span aria-hidden className="text-slate-400">·</span>
+                    <span aria-hidden className="text-slate-500">·</span>
                     <button type="button" data-testid="loan-type-change" onClick={() => setTypeLocked(false)} aria-label={`Change loan type (currently ${loanTypeById(loanType)?.label ?? loanType})`}
-                      className="rounded-full bg-white px-3.5 py-1 text-sm font-semibold leading-tight text-[#3B2BBF] shadow-sm ring-1 ring-[#3B2BBF]/20 hover:bg-[#F3F0FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">Change<Ar en="Change" className="text-center" /></button>
+                      className="inline-flex min-h-11 flex-col items-center justify-center rounded-full bg-white px-3.5 py-1 text-sm font-semibold leading-tight text-[#3B2BBF] shadow-sm ring-1 ring-[#3B2BBF]/20 hover:bg-[#F3F0FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">Change<Ar en="Change" className="text-center" /></button>
                   </div>
                 ) : (<>
                 <div role="radiogroup" aria-describedby={loanTypeError ? "loan-type-error" : undefined} aria-labelledby="g-loan-type" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -195,7 +199,7 @@ export function MortgageForm() {
                     const id = `loan-type-${i}`
                     return (
                       <label key={t.id} htmlFor={id}
-                        className={`relative flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border p-4 text-center transition-all has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#3B2BBF] ${on ? "border-[#3B2BBF] bg-[#3B2BBF]/[.07] ring-2 ring-[#3B2BBF]/25 shadow-[0_16px_36px_-18px_rgba(59,43,191,.8)]" : loanTypeError ? "border-rose-300 bg-rose-50/40" : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#3B2BBF]/40"}`}>
+                        className={`relative flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border p-4 text-center transition-all has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#3B2BBF] ${on ? "border-[#3B2BBF] bg-[#3B2BBF]/[.07] ring-2 ring-[#3B2BBF]/25 shadow-[0_16px_36px_-18px_rgba(59,43,191,.8)]" : loanTypeError ? "border-[#e7000b] bg-rose-50/40" : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#3B2BBF]/40"}`}>
                         <input id={id} type="radio" name="loan-type" value={t.id} checked={on} required={i === 0}
                           onChange={() => chooseLoanType(t.id)} className="sr-only" />
                         <img src={t.img} alt="" width={256} height={256} className="h-14 w-14 object-contain drop-shadow-md sm:h-16 sm:w-16" />
@@ -212,21 +216,23 @@ export function MortgageForm() {
 
               <Row label="Loan Amount" htmlFor="loan-amount" hint={loanType ? `${currency} · ${formatNumber(range.min)} – ${formatNumber(range.max)}` : "Select a loan type first"}>
                 <div className="relative">
-                  <span aria-hidden className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 font-display text-sm font-semibold text-slate-400" data-testid="amount-prefix">{currency}</span>
+                  <span aria-hidden className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 font-display text-sm font-semibold text-slate-600" data-testid="amount-prefix">{currency}</span>
                   <input id="loan-amount" name="loan-amount" inputMode="numeric" required
                     disabled={!loanType}
-                    aria-describedby="loan-amount-hint"
+                    aria-describedby={describedBy(amountErr && errId("loan-amount"), "loan-amount-hint")}
                     min={range.min} max={range.max}
                     value={amountNum ? fmt.format(amountNum) : ""}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder={loanType ? fmt.format(range.default) : "—"}
                     className={`${inputCls} pl-[3.75rem] tabular-nums disabled:opacity-50`} />
                 </div>
+                <FieldError id="loan-amount" className="-mt-1.5" />
                 {loanType && (
                   <input id="loan-amount-range" type="range" min={range.min} max={range.max} step={range.step}
                     value={amountNum || range.default}
                     onChange={(e) => set("loan-amount", e.target.value)}
-                    className="w-full accent-[#3B2BBF]" aria-label="Adjust loan amount" />
+                    aria-label="Adjust loan amount" aria-valuetext={formatMoney(amountNum || range.default, currency)}
+                    className="range-v2 w-full" style={{ "--p": `${Math.max(0, Math.min(100, (((amountNum || range.default) - range.min) / (range.max - range.min)) * 100))}%` } as React.CSSProperties} />
                 )}
                 <p id="loan-amount-hint" className="text-xs text-slate-500">
                   {loanType ? `Asking for ${formatMoney(amountNum || range.default, currency)}` : "Pick a loan type to set amount limits."}
@@ -241,8 +247,8 @@ export function MortgageForm() {
 
               <Row label="Your Name" groupId="g-name">
                 <div className="grid gap-3 sm:grid-cols-[1.4fr_1fr]">
-                  <Field id="first-name" label="First" autoComplete="given-name" data={data} set={set} />
-                  <Field id="last-name" label="Last" autoComplete="family-name" data={data} set={set} />
+                  <Field id="first-name" label="First name" autoComplete="given-name" data={data} set={set} />
+                  <Field id="last-name" label="Last name" autoComplete="family-name" data={data} set={set} />
                 </div>
               </Row>
               <Row label="Home Address" groupId="g-addr">
@@ -254,14 +260,14 @@ export function MortgageForm() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field id="postal" label="Postal / Zip Code" autoComplete="postal-code" maxLength={12} data={data} set={set} />
-                  <CountryCombobox value={data.country ?? ""} onChange={(v) => set("country", v)} />
+                  <div className="min-w-0"><CountryCombobox floating value={data.country ?? ""} onChange={(v) => set("country", v)} /><FieldError id="country" /></div>
                 </div>
               </Row>
-              <Row label="Birth Date" htmlFor="birth-date" hint="MM/DD/YYYY">
+              <Row label="Birth Date" groupId="g-birth-date" hint="MM/DD/YYYY">
                 <Field noAr id="birth-date" label="Birth Date" type="date" autoComplete="bday" max={BIRTH_MAX} min={BIRTH_MIN} data={data} set={set} />
               </Row>
-              <Row label="Email" htmlFor="email">
-                <Field id="email" label="name@example.com" type="email" autoComplete="email" inputMode="email" data={data} set={set} />
+              <Row label="Email" groupId="g-email">
+                <Field noAr id="email" label="Email address" hint="name@example.com" type="email" autoComplete="email" inputMode="email" data={data} set={set} />
               </Row>
               <Row label="Marital Status" htmlFor="marital">
                 <Select id="marital" label="Marital Status" placeholder="Select…" options={MARITAL} data={data} set={set} />
@@ -296,11 +302,11 @@ export function MortgageForm() {
                   </motion.div>
                 )}
               </AnimatePresence>
-              <Row label="Gross Annual Income" htmlFor="annual-income" hint={`Before tax, in ${currency}`}>
-                <Field id="annual-income" label="e.g. 85,000" inputMode="numeric" pattern="[0-9,.\s]+" data={data} set={set} />
+              <Row label="Gross Annual Income" groupId="g-annual-income" hint={`Before tax, in ${currency}`}>
+                <Field noAr id="annual-income" label="Annual income" prefix={currency} hint="e.g. 85,000" inputMode="numeric" pattern="[0-9,.\s]+" data={data} set={set} />
               </Row>
-              <Row label="Other Monthly Income" htmlFor="other-income" hint={`Rental, investments, etc. · ${currency}`}>
-                <Field id="other-income" label="e.g. 500" inputMode="numeric" pattern="[0-9,.\s]+" optional data={data} set={set} />
+              <Row label="Other Monthly Income" groupId="g-other-income" hint={`Rental, investments, etc. · ${currency}`}>
+                <Field noAr id="other-income" label="Monthly income" prefix={currency} hint="e.g. 500" inputMode="numeric" pattern="[0-9,.\s]+" optional data={data} set={set} />
               </Row>
               <Row label="Pay Frequency" htmlFor="pay-frequency">
                 <Select id="pay-frequency" label="Pay Frequency" placeholder="Select…" options={PAY_FREQUENCIES} data={data} set={set} />
@@ -339,7 +345,7 @@ export function MortgageForm() {
               </>)}
 
               {loanType === "Business" && (<>
-                <Row label="Business Name" htmlFor="business-name">
+                <Row label="Business Name" groupId="g-business-name">
                   <Field id="business-name" label="Registered business name" data={data} set={set} />
                 </Row>
                 <Row label="Use of Funds" groupId="g-purpose">
@@ -348,7 +354,7 @@ export function MortgageForm() {
               </>)}
 
               {loanType === "Education" && (<>
-                <Row label="School / Program" htmlFor="school-name">
+                <Row label="School / Program" groupId="g-school-name">
                   <Field id="school-name" label="School or program name" data={data} set={set} />
                 </Row>
                 <Row label="Use of Funds" groupId="g-purpose">
@@ -373,10 +379,10 @@ export function MortgageForm() {
               <Row label="ID type" groupId="g-id-type">
                 <Radios name="id-type" options={[...ID_TYPES]} data={data} set={set} labelledBy="g-id-type" />
               </Row>
-              <Row label="ID number" htmlFor="id-number" hint="As shown on the document">
+              <Row label="ID number" groupId="g-id-number" hint="As shown on the document">
                 <Field noAr id="id-number" label="ID number" data={data} set={set} autoComplete="off" spellCheck={false} maxLength={30} pattern="[A-Za-z0-9\- ]{4,30}" title="4–30 letters, numbers or dashes" />
               </Row>
-              <Row label="Expiry date" htmlFor="id-expiry" hint="Must be a valid, unexpired ID">
+              <Row label="Expiry date" groupId="g-id-expiry" hint="Must be a valid, unexpired ID">
                 <Field noAr id="id-expiry" label="Expiry date" type="date" data={data} set={set} min={todayIso} max="2060-12-31" />
               </Row>
               <Row label="Upload ID" groupId="g-id-upload" hint={data["id-type"] === "Passport" ? "Photo page required; back optional" : "Front and back required"}>
@@ -400,7 +406,7 @@ export function MortgageForm() {
                     const on = data["contact-method"] === m
                     return (
                       <label key={m} htmlFor={`contact-method-${i}`} data-testid={`contact-${m}`}
-                        className={`relative flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border p-4 text-center transition-all has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#3B2BBF] ${on ? "border-[#3B2BBF] bg-[#3B2BBF]/[.07] ring-2 ring-[#3B2BBF]/25 shadow-[0_16px_36px_-18px_rgba(59,43,191,.8)]" : contactError ? "border-rose-300 bg-white" : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#3B2BBF]/40"}`}>
+                        className={`relative flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border p-4 text-center transition-all has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#3B2BBF] ${on ? "border-[#3B2BBF] bg-[#3B2BBF]/[.07] ring-2 ring-[#3B2BBF]/25 shadow-[0_16px_36px_-18px_rgba(59,43,191,.8)]" : contactError ? "border-[#e7000b] bg-white" : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#3B2BBF]/40"}`}>
                         <input id={`contact-method-${i}`} type="radio" name="contact-method" value={m} checked={on} required={i === 0}
                           onChange={() => chooseContact(m)} className="sr-only" />
                         {m === "WhatsApp" ? (
@@ -433,14 +439,18 @@ export function MortgageForm() {
                             <input id="whatsapp-number" name="whatsapp-number" type="tel" inputMode="tel" autoComplete="tel-national" required
                               pattern="[0-9][0-9 ]{5,15}" title="Digits only, without the country code"
                               placeholder="50 123 4567" value={data["whatsapp-number"] ?? ""} onChange={(e) => set("whatsapp-number", e.target.value.replace(/[^\d ]/g, ""))}
+                              aria-describedby={describedBy(app.fieldErrors["whatsapp-number"] && errId("whatsapp-number"))}
                               className={inputCls + " tabular-nums"} />
                           </div>
+                          <FieldError id="whatsapp-number" className="!mt-0" />
                         </div>
                       ) : (
                         <div className="grid gap-2 pt-1 sm:max-w-md">
                           <label htmlFor="contact-email" className="text-sm font-medium text-slate-700">We’ll email you at <span className="font-normal text-slate-500">(edit if needed)</span><Ar en="We’ll email you at (edit if needed)" /></label>
                           <input id="contact-email" name="contact-email" type="email" inputMode="email" autoComplete="email" required
-                            placeholder="name@example.com" value={data["contact-email"] ?? ""} onChange={(e) => set("contact-email", e.target.value)} className={inputCls} />
+                            placeholder="name@example.com" value={data["contact-email"] ?? ""} onChange={(e) => set("contact-email", e.target.value)} className={inputCls}
+                            aria-describedby={describedBy(app.fieldErrors["contact-email"] && errId("contact-email"))} />
+                          <FieldError id="contact-email" className="!mt-0" />
                         </div>
                       )}
                     </motion.div>
@@ -464,9 +474,11 @@ export function MortgageForm() {
               <Row label="Consent" groupId="g-consent">
                 <label htmlFor="consent" className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-slate-600">
                   <input id="consent" name="consent" type="checkbox" required checked={data.consent === "yes"} onChange={(e) => set("consent", e.target.checked ? "yes" : "")}
+                    aria-describedby={describedBy(app.fieldErrors.consent && errId("consent"))}
                     className="mt-0.5 h-5 w-5 flex-none accent-[#3B2BBF]" />
                   <span>I confirm the details are accurate and agree that Avant Middle East may contact me about this enquiry.<Ar en="I confirm the details are accurate and agree that Avant Middle East may contact me about this enquiry." className="mt-1" /></span>
                 </label>
+                <FieldError id="consent" className="!mt-0" />
               </Row>
             </>)}
           </motion.fieldset>
@@ -489,10 +501,11 @@ export function MortgageForm() {
           </button>
         </div>
         <p className="mt-5 flex items-center justify-center gap-2 text-center text-xs text-slate-500 sm:text-sm">
-          <ShieldCheck aria-hidden className="h-4 w-4 flex-none text-[#34D399]" />
+          <ShieldCheck aria-hidden className="h-4 w-4 flex-none text-[#047857]" />
           <span>{"Your details are sent over an encrypted connection."}<Ar en="Your details are sent over an encrypted connection." className="text-center" /></span>
         </p>
       </form>
     </div>
+    </FieldErrorsContext.Provider>
   )
 }

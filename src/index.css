@@ -31,7 +31,9 @@ body {
 }
 ::selection { background: var(--color-electric); color: white; }
 
-:focus-visible { outline: 2px solid var(--color-glow); outline-offset: 3px; border-radius: 8px; }
+:focus-visible { outline: 2px solid #3B2BBF; outline-offset: 3px; border-radius: 8px; } /* H1: 9.2:1 on white */
+/* Dark surfaces keep the light glow ring (12+:1 on #120d33) */
+.dark-surface :focus-visible, .journey :focus-visible { outline-color: var(--color-glow); }
 
 /* Animated gradient mesh behind everything */
 .mesh {
@@ -147,7 +149,7 @@ body {
 @layer components {
   .ar-sub {
     font-family: "IBM Plex Sans Arabic", var(--font-sans);
-    font-size: max(0.78em, 10.5px);
+    font-size: max(0.92em, 13px); /* C4: Arabic never below 13px (HIG: RTL needs ~2pt more than Latin) */
     font-weight: 500;
     line-height: 1.6;
     letter-spacing: 0;
@@ -181,12 +183,12 @@ body {
 @keyframes float-tilt { 0%, 100% { transform: translateY(0) rotate(-4deg) } 50% { transform: translateY(-8px) rotate(4deg) } }
 .float-tilt { animation: float-tilt 6s ease-in-out infinite; }
 
-.range-v2 { -webkit-appearance: none; appearance: none; height: 28px; background: transparent; cursor: pointer; }
+.range-v2 { -webkit-appearance: none; appearance: none; height: 44px; /* C3: 44px hit area */ background: transparent; cursor: pointer; }
 .range-v2::-webkit-slider-runnable-track { height: 8px; border-radius: 999px; background: linear-gradient(90deg, #3B2BBF, #2F6BFF var(--p), rgba(59,43,191,.12) var(--p)); }
 .range-v2::-moz-range-track { height: 8px; border-radius: 999px; background: rgba(59,43,191,.12); }
 .range-v2::-moz-range-progress { height: 8px; border-radius: 999px; background: linear-gradient(90deg, #3B2BBF, #2F6BFF); }
-.range-v2::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -9px; width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 6px solid #3B2BBF; box-shadow: 0 8px 18px -6px rgba(59,43,191,.8); transition: transform .15s; }
-.range-v2::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 6px solid #3B2BBF; box-shadow: 0 8px 18px -6px rgba(59,43,191,.8); }
+.range-v2::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -10px; width: 28px; height: 28px; box-sizing: border-box; border-radius: 50%; background: #fff; border: 6px solid #3B2BBF; box-shadow: 0 8px 18px -6px rgba(59,43,191,.8); transition: transform .15s; }
+.range-v2::-moz-range-thumb { box-sizing: border-box; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 6px solid #3B2BBF; box-shadow: 0 8px 18px -6px rgba(59,43,191,.8); }
 .range-v2:active::-webkit-slider-thumb { transform: scale(1.12); }
 .range-v2:focus-visible { outline: 2px solid #3B2BBF; outline-offset: 4px; border-radius: 999px; }
 

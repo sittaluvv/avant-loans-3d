@@ -17,9 +17,9 @@ export function CountryCombobox({ value, onChange, label = "Country", floating =
         {o ? <Flag iso={o.iso} /> : null}
         <span className="min-w-0 flex-1">
           {floating && <span className={`block font-medium transition-all ${value ? "text-xs text-[#3B2BBF]" : "text-[15px] text-slate-500"}`}>{label}<span aria-hidden className="text-[#3B2BBF]"> *</span></span>}
-          {value ? <span data-testid="country-value" className="block truncate text-slate-900">{value}</span> : !floating && <span className="block text-slate-400">{label}</span>}
+          {value ? <span data-testid="country-value" className="block truncate text-slate-900">{value}</span> : !floating && <span className="block text-slate-500">{label}</span>}
         </span>
       </>)}
-      below={<Ar en={value || label} className="mt-1 px-1 text-[13px]" />} />
+      below={<Ar en={value || label} className="mt-1 px-1" />} />
   )
 }

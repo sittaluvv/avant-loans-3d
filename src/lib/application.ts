@@ -16,6 +16,39 @@ import gradCapImg from "../assets/3d/fluent-grad-cap.webp"
 
 export type Data = Record<string, string>
 
+/* Per-field error copy (shown as text under the field, not colour alone). Keyed by input name/id. */
+const REQUIRED_MSG: Record<string, string> = {
+  "first-name": "Enter your first name", "last-name": "Enter your last name", street: "Enter your street address",
+  city: "Enter your city", region: "Enter your region", postal: "Enter your postal or zip code", country: "Choose your country",
+  "birth-date": "Enter your birth date", email: "Enter your email address", marital: "Choose your marital status",
+  employment: "Choose your employment status", employer: "Enter your employer's name", "own-business-name": "Enter your business name",
+  "annual-income": "Enter your gross annual income", "pay-frequency": "Choose how often you are paid", purpose: "Choose what the loan is for",
+  "vehicle-make": "Enter the vehicle make", "vehicle-model": "Enter the vehicle model", "vehicle-year": "Enter the vehicle year",
+  "business-name": "Enter the registered business name", "school-name": "Enter the school or program name",
+  "id-type": "Choose your ID type", "id-number": "Enter your ID number", "id-expiry": "Enter your ID expiry date",
+  "whatsapp-number": "Enter your WhatsApp number", "contact-email": "Enter your email address",
+  consent: "Tick the box to confirm and continue", "loan-amount": "Enter a loan amount",
+}
+const FORMAT_MSG: Record<string, string> = {
+  "vehicle-year": "Use a 4-digit year, e.g. 2022", "id-number": "Use 4–30 letters, numbers or dashes",
+  "annual-income": "Use numbers only, e.g. 85,000", "other-income": "Use numbers only, e.g. 500",
+  "whatsapp-number": "Digits only, without the country code", postal: "Check your postal or zip code",
+}
+function fieldMessage(el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): string {
+  const key = el.name || el.id
+  const v = el.validity
+  if (v.valueMissing) return REQUIRED_MSG[key] ?? (el.tagName === "SELECT" ? "Choose an option" : "Fill in this field")
+  if (v.typeMismatch && (el as HTMLInputElement).type === "email") return "Enter a valid email, like name@example.com"
+  if (v.patternMismatch) return FORMAT_MSG[key] ?? (el.title || "Check the format")
+  const min = (el as HTMLInputElement).min, max = (el as HTMLInputElement).max
+  if (key === "id-expiry" && v.rangeUnderflow) return "This ID has expired. Use a valid, unexpired ID"
+  if (key === "birth-date" && (v.rangeUnderflow || v.rangeOverflow)) return "Check your birth date: applicants must be 18 or older"
+  if (v.rangeUnderflow) return `Enter ${min} or more`
+  if (v.rangeOverflow) return `Enter ${max} or less`
+  if (v.badInput) return "Enter a valid value"
+  return REQUIRED_MSG[key] ?? "Check this field"
+}
+
 export const COUNTRIES = ["United Arab Emirates", "Saudi Arabia", "Qatar", "Kuwait", "Bahrain", "Oman", "Jordan", "Egypt", "Lebanon", "United Kingdom", "United States", "Other"]
 /** Lower-case ISO codes for the flags ("Other" has a globe). Also maps /geo (upper-case) back to a country. */
 export const COUNTRY_ISO: Record<string, string> = {
@@ -154,9 +187,12 @@ export function useApplication() {
   const [delivered, setDelivered] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState("")
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const clearFieldError = (k: string) => setFieldErrors((f) => { if (!(k in f)) return f; const n = { ...f }; delete n[k]; return n })
   const { code: currency } = useCurrency()
   const set = (k: string, v: string) => {
     document.getElementById(k)?.removeAttribute("aria-invalid") // clear the red state as soon as the field is edited
+    clearFieldError(k)
     setError("")
     setData((d) => ({ ...d, [k]: v }))
   }
@@ -181,12 +217,12 @@ export function useApplication() {
   }
 
   const empKind = empKindOf(data.employment)
-  const setEmployment = (v: string) => setData((d) => {
+  const setEmployment = (v: string) => { clearFieldError("employment"); setData((d) => {
     const keep = new Set(EMP_FIELDS[empKindOf(v)])
     const next: Data = { ...d, employment: v }
     for (const k of [...EMP_FIELDS.employed, ...EMP_FIELDS.self]) if (!keep.has(k)) delete next[k]
     return next
-  })
+  }) }
 
   const [idFiles, setIdFiles] = useState<IdFiles>({})
   const [idErrors, setIdErrors] = useState<Partial<Record<IdSide, string>>>({})
@@ -340,16 +376,26 @@ export function useApplication() {
       }
     }
     bad.forEach((el) => el.setAttribute("aria-invalid", "true"))
+    // Per-field text (C2): one message per field name. Duration, ID files and contact method keep their own messages.
+    const fe: Record<string, string> = {}
+    for (const el of bad) {
+      const key = el.name || el.id
+      if (!key || key in fe || key === "loan-duration" || key === "contact-method" || key === "loan-type" || (el as HTMLInputElement).type === "file") continue
+      fe[key] = key === "loan-amount" && el.validity.valid && data["loan-type"]
+        ? `Enter an amount between ${formatMoney(range.min, currency)} and ${formatMoney(range.max, currency)}`
+        : fieldMessage(el)
+    }
+    setFieldErrors(fe)
     const count = new Set(bad.map((el) => el.name || el.id)).size
     if (bad.length) {
       setError(`Please complete ${count === 1 ? "the highlighted field" : `the ${count} highlighted fields`} to continue.`)
       const first = bad[0] as HTMLInputElement
       if (first.dataset.proxy) document.getElementById(first.dataset.proxy)?.focus() // custom widget (country combobox)
       else if (first.type === "file") first.closest("[data-id-section]")?.scrollIntoView({ block: "center" })
-      else { first.focus(); first.reportValidity?.() }
+      else first.focus() // the per-field message under it says what to fix
       return false
     }
-    setError("")
+    setError(""); setFieldErrors({})
     return true
   }
 
@@ -370,7 +416,7 @@ export function useApplication() {
   const restart = () => { setDone(false); setDelivered(false) }
 
   return {
-    data, setData, set, currency, error, setError, sending, done, delivered, submit, restart,
+    data, setData, set, currency, error, setError, fieldErrors, clearFieldError, sending, done, delivered, submit, restart,
     contactError, chooseContact, empKind, setEmployment,
     idFiles, idErrors, setIdFile, todayIso,
     loanType, range, amountNum, months, durationUnit, durationErr, setDuration, setDurationUnit, stepDuration, pickDurationChip, chooseLoanType, typeLocked, setTypeLocked, loanTypeError, setAmount,

@@ -42,7 +42,7 @@ export function CurrencySelect({ dark = false }: { dark?: boolean }) {
         aria-controls={`${id}-list`}
         aria-label={`Currency: ${cur.code} (${cur.country}). Change currency`}
         onClick={() => setOpen((o) => !o)}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-2 text-sm font-semibold tabular-nums transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:px-3 ${
+        className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-2.5 py-2 text-sm font-semibold tabular-nums transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:px-3 ${
           dark ? "border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 focus-visible:outline-white" : "border-[#3B2BBF]/20 bg-white text-slate-800 hover:border-[#3B2BBF]/45 focus-visible:outline-[#3B2BBF]"
         }`}
       >
@@ -71,7 +71,7 @@ export function CurrencySelect({ dark = false }: { dark?: boolean }) {
                 aria-selected={sel}
                 onPointerEnter={() => setActive(i)}
                 onClick={() => choose(i)}
-                className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${i === active ? "bg-[#3B2BBF]/[.07]" : ""}`}
+                className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-sm ${i === active ? "bg-[#3B2BBF]/[.12] ring-2 ring-inset ring-[#3B2BBF]" : ""}`}
               >
                 <Flag iso={c.flag} />
                 <span className="font-semibold tabular-nums">{c.code}</span>
@@ -80,7 +80,7 @@ export function CurrencySelect({ dark = false }: { dark?: boolean }) {
               </li>
             )
           })}
-          <li role="presentation" className="px-3 pt-1.5 pb-1 text-[11px] leading-snug text-slate-400">Indicative amounts · fixed USD-peg rates</li>
+          <li role="presentation" className="px-3 pt-1.5 pb-1 text-xs leading-snug text-slate-600">Indicative amounts · fixed USD-peg rates</li>
         </ul>
       )}
     </div>
