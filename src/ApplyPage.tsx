@@ -3,6 +3,7 @@ import { BASE } from "./components/Header"
 import { Logo } from "./components/Logo"
 import { MortgageForm } from "./components/MortgageForm"
 import { CurrencySelect } from "./components/CurrencySelect"
+import { Checklists } from "./components/LoanInfo"
 import { SiteFooter } from "./components/SiteFooter"
 
 export default function ApplyPage() {
@@ -33,6 +34,7 @@ export default function ApplyPage() {
 
       <main id="main" className="relative z-10 mx-auto max-w-4xl px-4 pt-6 pb-20 sm:px-6 sm:pt-10">
         <MortgageForm />
+        <div className="mt-10"><Checklists compact /></div>
       </main>
 
       <SiteFooter />

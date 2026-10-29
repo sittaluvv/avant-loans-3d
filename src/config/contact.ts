@@ -7,6 +7,10 @@
 export const CONTACT = {
   whatsapp: "",
   email: "",
+  /** Business phone shown in the footer (tel: link). Ronald-provided Dubai number. */
+  phone: "+971501793501",
+  phoneDisplay: "+971 50 179 3501",
+  address: "Meydan Grandstand, 6th Floor, Al Meydan Rd, Nad Al Sheba 1, Dubai, UAE",
 } as const
 
 export const whatsappHref = (n: string) => `https://wa.me/${n.replace(/\D/g, "")}`

@@ -7,6 +7,7 @@ import { LoanTypePicker, pickerLinkProps } from "./components/LoanTypePicker"
 import { applyUrlFor, loanTypeById } from "./lib/loanTypes"
 import { BiLabel } from "./i18n/Ar"
 import { AR } from "./i18n/ar"
+import { ApplyEntry, Checklists, FeeTable, LoanCalculator } from "./components/LoanInfo"
 import { SiteFooter } from "./components/SiteFooter"
 import { formatMoney, formatNumber, loanRange, useCurrency } from "./lib/currency"
 import houseImg from "./assets/3d/fluent-house.webp"
@@ -55,6 +56,7 @@ export default function App() {
       <main>
         {/* HERO: still photo from our handshake clip */}
         <HeroPhoto />
+        <ApplyEntry />
 
         {/* LOAN TYPES */}
         <section id="loan-types" className="scroll-mt-24 px-5 py-16 sm:px-8 sm:py-20">
@@ -109,6 +111,10 @@ export default function App() {
 
         {/* WHY US (honest feature list) */}
         <WhyUs />
+
+        <LoanCalculator />
+        <FeeTable />
+        <section aria-label="Eligibility and documents" className="px-5 pb-12 sm:px-8"><Checklists /></section>
 
         {/* FINAL CTA */}
         <section aria-label="Apply" className="px-5 pb-20 sm:px-8">
