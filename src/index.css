@@ -202,3 +202,11 @@ body {
   100% { opacity: 0; transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y) + 26px)) scale(1) rotate(var(--r)) }
 }
 @media (prefers-reduced-motion: reduce) { .journey-mesh, .float-tilt, .id-scan { animation: none !important; } .id-scan { display: none; } .confetti { display: none; } }
+
+/* Phone polish: stop iOS focus-zoom, no sideways drift, tidy text */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { overflow-x: clip; }
+@media (max-width: 639px) {
+  input, select, textarea { font-size: 16px !important; }
+  h1, h2, h3, p, li, a, label { overflow-wrap: anywhere; }
+}
