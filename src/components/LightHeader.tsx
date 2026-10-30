@@ -5,6 +5,7 @@ import { Logo } from "./Logo"
 import { BiLabel } from "../i18n/Ar"
 import { pickerLinkPropsFor } from "./LoanTypePicker"
 import { CurrencySelect } from "./CurrencySelect"
+import { LangSwitch } from "./LangSwitch"
 
 /** overlay: header floats over the dark hero video (white logo/nav) and turns light after scrolling. */
 export function LightHeader({ overlay = false, links, applyUrl = APPLY_URL }: { overlay?: boolean; links?: [string, string][]; applyUrl?: string }) {
@@ -17,7 +18,7 @@ export function LightHeader({ overlay = false, links, applyUrl = APPLY_URL }: { 
     return () => window.removeEventListener("scroll", on)
   }, [overlay])
   const dark = overlay && !scrolled
-  const navLinks = links ?? [["#loan-types", "Loans"], ["#how", "How it works"], ["#why-us", "Why us"], [APPLY_URL, "Apply"]]
+  const navLinks = links ?? [["#loan-types", "Loans"], ["#how", "How it works"], ["#calculator", "Calculator"], [APPLY_URL, "Apply"]]
   const linkProps = (href: string) => (href === APPLY_URL ? pickerLinkProps : { href })
   // 640-1023px: the nav collapses into a "Menu" disclosure (the full nav does not fit beside currency + Apply)
   const [menu, setMenu] = useState(false)
@@ -45,7 +46,8 @@ export function LightHeader({ overlay = false, links, applyUrl = APPLY_URL }: { 
             <a key={label} {...linkProps(href)} className={`inline-flex min-h-11 items-center rounded px-2 -mx-2 focus-visible:outline-2 focus-visible:outline-offset-0 ${dark ? "hover:text-white focus-visible:outline-white" : "hover:text-[#3B2BBF] focus-visible:outline-[#3B2BBF]"}`}>{label}</a>
           ))}
         </nav>
-        <div className="flex flex-none items-center gap-3">
+        <div className="flex flex-none items-center gap-2 sm:gap-3">
+        <LangSwitch dark={dark} />
         <CurrencySelect dark={dark} />
         <a
           {...pickerLinkProps}
@@ -64,7 +66,7 @@ export function LightHeader({ overlay = false, links, applyUrl = APPLY_URL }: { 
         </div>
         {menu && (
           <nav id={menuId} aria-label="Main menu" data-testid="header-menu-panel"
-            className="absolute top-full right-5 mt-2 w-56 rounded-2xl border border-[#3B2BBF]/10 bg-white p-2 text-[15px] font-semibold text-slate-700 shadow-[0_24px_60px_-20px_rgba(26,20,70,.45)] sm:right-8 lg:hidden">
+            className="absolute top-full end-5 mt-2 w-56 rounded-2xl border border-[#3B2BBF]/10 bg-white p-2 text-[15px] font-semibold text-slate-700 shadow-[0_24px_60px_-20px_rgba(26,20,70,.45)] sm:end-8 lg:hidden">
             {navLinks.map(([href, label]) => (
               <a key={label} {...linkProps(href)} onClick={(e) => { setMenu(false); (linkProps(href) as { onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void }).onClick?.(e) }}
                 className="flex min-h-11 items-center rounded-xl px-3 py-2.5 hover:bg-[#3B2BBF]/[.06] hover:text-[#3B2BBF] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#3B2BBF]">{label}</a>

@@ -1,8 +1,8 @@
 import { motion, useReducedMotion } from "motion/react"
 import { LightHeader } from "./components/LightHeader"
-import { HeroPhoto } from "./components/HeroPhoto"
+import { SignatureHero } from "./components/SignatureHero"
+import { ChatAssistant } from "./chat/ChatAssistant"
 import { APPLY_URL } from "./components/Header"
-import { WhyUs } from "./components/WhyUs"
 import { LoanTypePicker, pickerLinkProps } from "./components/LoanTypePicker"
 import { applyUrlFor, loanTypeById } from "./lib/loanTypes"
 import { BiLabel } from "./i18n/Ar"
@@ -55,7 +55,7 @@ export default function App() {
 
       <main>
         {/* HERO: still photo from our handshake clip */}
-        <HeroPhoto />
+        <SignatureHero />
         <ApplyEntry />
 
         {/* LOAN TYPES */}
@@ -109,9 +109,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* WHY US (honest feature list) */}
-        <WhyUs />
-
         <LoanCalculator />
         <FeeTable />
         <section aria-label="Eligibility and documents" className="px-5 pb-12 sm:px-8"><Checklists /></section>
@@ -133,6 +130,7 @@ export default function App() {
       </main>
 
       <SiteFooter />
+      <ChatAssistant />
     </div>
   )
 }

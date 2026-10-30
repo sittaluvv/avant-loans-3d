@@ -1,15 +1,15 @@
-import { useState } from "react"
 import { Check, ShieldCheck } from "lucide-react"
 import { Ar, BiLabel } from "../i18n/Ar"
 import { pickerLinkProps } from "./LoanTypePicker"
 import { formatMoney, loanRange, useCurrency } from "../lib/currency"
 import { REGULATORY_LINE } from "../lib/legal"
+import { setCalc, useCalc } from "../lib/calcStore"
 
 /** Illustrative enquiry figures only — Avant placeholders, NOT an offer. Edit here. */
 export const ILLUSTRATIVE = { aprPct: 12, processingFeePct: 1.5 }
-const TENURES = [6, 12, 18, 24, 36, 48, 60]
+export const TENURES = [6, 12, 18, 24, 36, 48, 60]
 
-function monthly(p: number, aprPct: number, n: number) {
+export function monthly(p: number, aprPct: number, n: number) {
   const r = aprPct / 100 / 12
   return r === 0 ? p / n : (p * r) / (1 - Math.pow(1 + r, -n))
 }
@@ -24,8 +24,9 @@ const Note = () => (
 export function LoanCalculator() {
   const { code } = useCurrency()
   const r = loanRange("Personal", code)
-  const [amt, setAmt] = useState(r.default)
-  const [ti, setTi] = useState(3)
+  const c = useCalc()
+  const amt = c.amt ?? r.default, ti = c.ti
+  const setAmt = (v: number) => setCalc({ amt: v }), setTi = (v: number) => setCalc({ ti: v })
   const a = Math.min(Math.max(amt, r.min), r.max)
   const n = TENURES[ti]
   const m = monthly(a, ILLUSTRATIVE.aprPct, n)

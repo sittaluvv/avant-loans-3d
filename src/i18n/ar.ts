@@ -328,6 +328,7 @@ const RULES: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^Allowed: (\d+)–(\d+) (months|years)$/, (m) => `المدة المسموحة: من ${m[1]} إلى ${m[2]} ${m[3] === "months" ? "شهرًا" : "سنوات"}`],
   [/^Enter a loan duration between (\d+) and (\d+) (months|years)\.$/, (m) => `أدخل مدة تمويل بين ${m[1]} و${m[2]} ${m[3] === "months" ? "شهرًا" : "سنوات"}.`],
   [/^Use whole (months|years) only \(between (\d+) and (\d+) (?:months|years)\)\.$/, (m) => `استخدم أرقامًا صحيحة فقط (من ${m[2]} إلى ${m[3]} ${m[1] === "months" ? "شهرًا" : "سنوات"}).`],
+  [/^Asking for (.+)$/, (m) => `المبلغ المطلوب ${m[1]}`],
   [/^Step (\d) of (\d)$/, (m) => `الخطوة ${m[1]} من ${m[2]}`],
   [/^This file is [\d.]+ MB\. The limit is 5 MB\.$/, () => "حجم الملف يتجاوز الحد الأقصى (5 ميغابايت)."],
   [/^Could not deliver the application/, () => "تعذّر إرسال الطلب. يرجى المحاولة مرة أخرى."],

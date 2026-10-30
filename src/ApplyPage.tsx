@@ -1,3 +1,4 @@
+import { LangSwitch } from "./components/LangSwitch"
 import { ArrowLeft } from "lucide-react"
 import { BASE } from "./components/Header"
 import { Logo } from "./components/Logo"
@@ -20,13 +21,14 @@ export default function ApplyPage() {
           <a href={BASE} aria-label="Avant Loans Middle East home" className="inline-flex min-h-11 items-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]">
             <Logo className="h-8 min-[400px]:h-9 sm:h-11 lg:h-12" onDark={false} />
           </a>
-          <div className="flex flex-none items-center gap-3">
+          <div className="flex flex-none items-center gap-2 sm:gap-3">
+            <LangSwitch />
             <CurrencySelect />
             <a
               href={BASE}
               className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[#3B2BBF]/25 bg-white px-3 py-2 text-sm sm:px-4 font-semibold text-[#3B2BBF] transition-colors hover:bg-[#3B2BBF]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B2BBF]"
             >
-              <ArrowLeft aria-hidden className="h-4 w-4" /> <span className="sm:hidden">Home</span><span className="hidden sm:inline">Back to home</span>
+              <ArrowLeft aria-hidden className="h-4 w-4 rtl-flip" /> <span className="sm:hidden">Home</span><span className="hidden sm:inline">Back to home</span>
             </a>
           </div>
         </div>
