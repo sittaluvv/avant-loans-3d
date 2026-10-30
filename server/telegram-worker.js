@@ -21,7 +21,7 @@
  */
 
 const CORS = (origin, allowed) => ({
-  "Access-Control-Allow-Origin": origin && origin === allowed ? origin : "null",
+  "Access-Control-Allow-Origin": origin && allowed.split(",").map(x=>x.trim()).includes(origin) ? origin : "null",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Max-Age": "86400",
@@ -117,12 +117,12 @@ export default {
     // GET /geo -> { country } from Cloudflare's own edge geolocation (no third-party IP service).
     // Nothing is logged or stored; the response is per-visitor so it is never cached.
     if (request.method === "GET" && new URL(request.url).pathname === "/geo") {
-      if (origin && origin !== allowed) return json({ error: "Origin not allowed" }, 403, headers)
+      if (origin && !allowed.split(",").map(x=>x.trim()).includes(origin)) return json({ error: "Origin not allowed" }, 403, headers)
       const country = typeof request.cf?.country === "string" ? request.cf.country : null
       return json({ country }, 200, { ...headers, "Cache-Control": "no-store, private" })
     }
     if (request.method !== "POST") return json({ error: "POST only" }, 405, headers)
-    if (origin && origin !== allowed) return json({ error: "Origin not allowed" }, 403, headers)
+    if (origin && !allowed.split(",").map(x=>x.trim()).includes(origin)) return json({ error: "Origin not allowed" }, 403, headers)
     if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return json({ error: "Telegram secrets not configured" }, 503, headers)
 
     const ctype = request.headers.get("Content-Type") || ""
